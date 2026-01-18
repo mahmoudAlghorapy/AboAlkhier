@@ -1,0 +1,34 @@
+<odoo>
+    <!-- Inherit Form View to Modify it -->
+    <record id="report_pos_order_pivot_inherit" model="ir.ui.view">
+        <field name="name">report.pos.order.pivot.inherit</field>
+        <field name="model">report.pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_report_pos_order_pivot"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='date']" position="after">
+                 <field name="brand_id" type="row"/>
+                <!-- Add your fields or attributes here -->
+            </xpath>
+
+        </field>
+    </record>
+    <record id="report_pos_order_search_inherit" model="ir.ui.view">
+        <field name="name">report.pos.order.search.inherit</field>
+        <field name="model">report.pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_report_pos_order_search"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//search" position="inside">
+                <field name="brand_id"/>
+                <field name="pos_categ_id"/>
+            </xpath>
+            <xpath expr="//filter[@name='pos_categ_id']" position="after">
+                <filter string="product Brand" name="product_brand" context="{'group_by':'brand_id'}"/>
+<!--                <filter string="POS Category" name="product_pos_categ" context="{'group_by':'pos_categ_id'}"/>-->
+
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

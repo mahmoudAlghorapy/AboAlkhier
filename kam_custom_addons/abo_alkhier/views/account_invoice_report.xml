@@ -1,0 +1,32 @@
+<odoo>
+    <!-- Inherit Form View to Modify it -->
+    <record id="report_account_invoice_pivot_inherit" model="ir.ui.view">
+        <field name="name">account.invoice.report.pivot.inherit</field>
+        <field name="model">account.invoice.report</field>
+        <field name="inherit_id" ref="account.view_account_invoice_report_pivot"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='product_categ_id']" position="after">
+                 <field name="brand_id" type="col"/>
+                <!-- Add your fields or attributes here -->
+            </xpath>
+
+        </field>
+    </record>
+    <record id="report_account_invoice_search_inherit" model="ir.ui.view">
+        <field name="name">account.invoice.report.search.inherit</field>
+        <field name="model">account.invoice.report</field>
+        <field name="inherit_id" ref="account.view_account_invoice_report_search"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//search//field[@name='product_id']" position="after">
+                <field name="brand_id"/>
+            </xpath>
+            <xpath expr="//filter[@name='partner_id']" position="after">
+                <filter string="product Brand" name="product_brand" context="{'group_by':'brand_id'}"/>
+
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

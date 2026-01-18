@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="group_pos_restricted_user" model="res.groups">
+        <field name="name">Restricted POS User</field>
+        <field name="comment">POS User with restrictions</field>
+    </record>
+
+</odoo>

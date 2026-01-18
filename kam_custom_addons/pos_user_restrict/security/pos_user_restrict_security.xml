@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright © from 2018 Garazd Creation (https://garazd.biz)
+@author: Yurii Razumovskyi (support@garazd.biz)
+License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
+-->
+
+<odoo noupdate="1">
+
+        <record id="point_of_sale_rule_user_config" model="ir.rule">
+            <field name="name">Show only allowed POS configs for restricted Users</field>
+            <field name="model_id" ref="point_of_sale.model_pos_config"/>
+            <field name="domain_force">[('id', 'in', user.pos_config_ids.ids)]</field>
+            <field name="groups" eval="[(4, ref('pos_user_restrict.group_pos_restricted_user'))]"/>
+        </record>
+        <record id="point_of_sale_rule_admin_config" model="ir.rule">
+            <field name="name">Show all POS configs for Administrators</field>
+            <field name="model_id" ref="point_of_sale.model_pos_config"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('point_of_sale.group_pos_manager'))]"/>
+        </record>
+
+        <record id="point_of_sale_rule_user_session" model="ir.rule">
+            <field name="name">Show POS Sessions only for allowed POS configs.</field>
+            <field name="model_id" ref="point_of_sale.model_pos_session"/>
+            <field name="domain_force">[('config_id', 'in', user.pos_config_ids.ids)]</field>
+            <field name="groups" eval="[(4, ref('pos_user_restrict.group_pos_restricted_user'))]"/>
+        </record>
+        <record id="point_of_sale_rule_admin_session" model="ir.rule">
+            <field name="name">Show all POS Sessions for Administrators</field>
+            <field name="model_id" ref="point_of_sale.model_pos_session"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('point_of_sale.group_pos_manager'))]"/>
+        </record>
+
+        <record id="point_of_sale_rule_user_order" model="ir.rule">
+            <field name="name">Show POS Orders only for allowed POS configs.</field>
+            <field name="model_id" ref="point_of_sale.model_pos_order"/>
+            <field name="domain_force">[('config_id', 'in', user.pos_config_ids.ids)]</field>
+            <field name="groups" eval="[(4, ref('pos_user_restrict.group_pos_restricted_user'))]"/>
+        </record>
+        <record id="point_of_sale_rule_admin_order" model="ir.rule">
+            <field name="name">Show all POS Orders for Administrators.</field>
+            <field name="model_id" ref="point_of_sale.model_pos_order"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('point_of_sale.group_pos_manager'))]"/>
+        </record>
+
+        <record id="point_of_sale_rule_user_payment" model="ir.rule">
+            <field name="name">Show POS Payments only for allowed POS configs.</field>
+            <field name="model_id" ref="point_of_sale.model_pos_payment"/>
+            <field name="domain_force">[('session_id.config_id', 'in', user.pos_config_ids.ids)]</field>
+            <field name="groups" eval="[(4, ref('pos_user_restrict.group_pos_restricted_user'))]"/>
+        </record>
+        <record id="point_of_sale_rule_admin_payment" model="ir.rule">
+            <field name="name">Show all POS Payments for Administrators.</field>
+            <field name="model_id" ref="point_of_sale.model_pos_payment"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('point_of_sale.group_pos_manager'))]"/>
+        </record>
+
+</odoo>

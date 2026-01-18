@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sbl_res_users_form_inherit" model="ir.ui.view">
+        <field name="name">res.users.form.inherit</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="sbl_pos_access_rights" string="POS Access Rights">
+                    <group name="sbl_pos_order_management" string="Order Management">
+                        <group>
+                            <field name="sbl_hide_pos_new_order_button" widget="boolean_toggle"/>
+                            <field name="sbl_hide_pos_delete_order_button" widget="boolean_toggle"/>
+                            <field name="sbl_hide_pos_actions_button" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="sbl_hide_pos_customer_selection_button" widget="boolean_toggle"/>
+                            <field name="sbl_hide_pos_payment" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <group name="sbl_pos_numpad" string="Numpad">
+                        <group>
+                            <field name="sbl_hide_pos_numpad" widget="boolean_toggle"/>
+                            <field name="sbl_disable_pos_change_price" widget="boolean_toggle" invisible="sbl_hide_pos_numpad"/>
+                            <field name="sbl_disable_pos_qty" widget="boolean_toggle" invisible="sbl_hide_pos_numpad"/>
+                        </group>
+                        <group>
+                            <field name="sbl_disable_pos_numpad_plus_minus" widget="boolean_toggle" invisible="sbl_hide_pos_numpad"/>
+                            <field name="sbl_disable_pos_discount_button" widget="boolean_toggle" invisible="sbl_hide_pos_numpad"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

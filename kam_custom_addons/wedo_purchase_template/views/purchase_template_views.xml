@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Purchase Template Views -->
+        <record id="purchase_order_template_view_form" model="ir.ui.view">
+            <field name="name">purchase.order.template.form</field>
+            <field name="model">purchase.order.template</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form string="Purchase Template">
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="name" class="oe_edit_only"/>
+                            <h1>
+                                <field name="name" placeholder="Template Name"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group colspan="4" col="4">
+                                <!--                               <field name="vendor_ids" widget="many2many_tags" required="0" colspan ="2"/>-->
+                                <field name="vendor_id"
+                                       colspan="2"
+                                       domain="[('id', 'in', company_partner_ids)]"/>
+
+                                <field name="sub_vendor_id"
+                                       colspan="2"
+                                       domain="[('id', 'in', company_partner_ids)]"/>
+                                <field name="order_tag_ids" widget="many2many_tags" colspan="2"
+                                       groups="wedo_purchase_template.order_tag_group"/>
+                                <field
+                                        name="company_ids"
+                                        widget="many2many_tags"
+                                        options="{'no_create': True}"
+                                />
+                                <field name="internal_transfer"/>
+                                <!--                                <field name="active" colspan ="2"/>-->
+                            </group>
+                        </group>
+                        <notebook name="main_book">
+                            <page string="Lines">
+                                <field name="po_template_line_ids" widget="section_and_note_one2many">
+                                    <list string="Purchase Template Lines" editable="bottom">
+                                        <control>
+                                            <create name="add_product_control" string="Add a product"/>
+                                            <create name="add_section_control" string="Add a section"
+                                                    context="{'default_display_type': 'line_section'}"/>
+                                            <create name="add_note_control" string="Add a note"
+                                                    context="{'default_display_type': 'line_note'}"/>
+                                        </control>
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="display_type" column_invisible="True"/>
+                                        <!--                                        <field name="product_id"/>-->
+                                        <field name="product_id" required="not display_type"
+                                               widget="product_label_section_and_note_field"
+
+
+                                               options="{'show_label_warning': True}"
+                                               domain="[('purchase_ok', '=', True), '|', ('company_id', '=', False), ('company_id', 'parent_of', parent.company_id)]"/>
+
+                                        <field name="name" widget="section_and_note_text" optional="show"/>
+                                        <field name="product_qty"/>
+                                        <!--                                        <field name="product_uom_category_id" invisible="1"/>-->
+                                        <field
+                                                name="product_uom_id"
+                                                groups="uom.group_uom"
+                                                required="not display_type"
+                                        />
+                                        <!--                                        <field name="tax_ids" widget="many2many_tax_tags"-->
+                                        <!--                                               domain="[('type_tax_use', '=', 'purchase'), ('company_id', 'parent_of', parent.company_id), ('country_id', '=', parent.tax_country_id)]"-->
+                                        <!--                                               options="{'no_create': True}"/>-->
+                                        <field name="price_unit"/>
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                        <field name="note" nolabel="1" placeholder="You can set default Terms &amp; Conditions"/>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="purchase_order_template_view_tree" model="ir.ui.view">
+            <field name="name">purchase.order.template.tree</field>
+            <field name="model">purchase.order.template</field>
+            <field name="type">list</field>
+            <field name="arch" type="xml">
+                <list string="Purchase Template">
+                    <field name="name"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="purchase_order_template_action" model="ir.actions.act_window">
+            <field name="name">Purchase Templates</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">purchase.order.template</field>
+            <field name="view_mode">list,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your purchase template
+                </p>
+            </field>
+        </record>
+
+        <menuitem id="purchase_order_template_menu" action="purchase_order_template_action"
+                  parent="purchase.menu_purchase_config" sequence="1" name="Purchase Templates"/>
+
+        <!-- Purchase Order Inherit -->
+        <record id="purchase_order_tree_inherit_purchase_template" model="ir.ui.view">
+            <field name="name">purchase.order.tree</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='amount_total']" position="attributes">
+                    <attribute name="groups">wedo_purchase_template.purchase_order_price_group</attribute>
+                </xpath>
+
+            </field>
+        </record>
+        <record id="purchase_order_form_inherit_purchase_template" model="ir.ui.view">
+            <field name="name">purchase.order.form</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[@class='oe_subtotal_footer']" position="attributes">
+                    <attribute name="groups">wedo_purchase_template.purchase_order_price_group</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']//list//field[@name='price_unit']" position="attributes">
+
+                    <attribute name="groups">wedo_purchase_template.purchase_order_price_group</attribute>
+
+                </xpath>
+                <xpath expr="//field[@name='order_line']//list//field[@name='discount']" position="attributes">
+
+                    <attribute name="groups">wedo_purchase_template.purchase_order_price_group</attribute>
+
+                </xpath>
+                <xpath expr="//field[@name='order_line']//list//field[@name='price_subtotal']" position="attributes">
+
+                    <attribute name="groups">wedo_purchase_template.purchase_order_price_group</attribute>
+
+                </xpath>
+                <xpath expr="//field[@name='partner_ref']" position="after">
+                    <field name="po_template_id" readonly="state != 'draft'"/>
+                    <field name="sub_vendor_id" readonly="po_template_id != False" force_save="1"/>
+                    <field name="order_tag_ids" readonly="po_template_id != False" widget="many2many_tags"
+                           force_save="1" colspan="2"
+                           groups="wedo_purchase_template.order_tag_group"/>
+                    <field name="ref_po_template_id" readonly="state != 'draft'" invisible="not ref_po_template_id"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

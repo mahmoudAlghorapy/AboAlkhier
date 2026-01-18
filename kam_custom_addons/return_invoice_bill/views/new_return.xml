@@ -1,0 +1,13 @@
+<odoo>
+     <record id="act_new_stock_return_picking" model="ir.actions.act_window">
+        <field name="name">Reverse Transfer</field>
+        <field name="res_model">stock.return.picking</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <menuitem id="product_brand_menu"
+              name="NEW Return"
+              parent="stock.menu_stock_root"
+              action="act_new_stock_return_picking"
+              sequence="111"/>
+</odoo>

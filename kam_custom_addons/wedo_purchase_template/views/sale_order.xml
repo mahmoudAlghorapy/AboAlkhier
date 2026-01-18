@@ -1,0 +1,22 @@
+<odoo>
+    <record id="sale_order_form_inherit_sale_template" model="ir.ui.view">
+        <field name="name">sale.order.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_management.sale_order_form_quote"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='sale_order_template_id']" position="after">
+
+                <field name="sub_vendor_id"
+                       readonly="ref_po_template_id"/>
+
+                <field name="order_tag_ids"
+                       widget="many2many_tags"
+                       colspan="2"
+                       groups="wedo_purchase_template.order_tag_group"
+                       readonly="ref_po_template_id"/>
+                <field name="ref_po_template_id" invisible="not ref_po_template_id" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

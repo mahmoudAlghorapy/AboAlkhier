@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View -->
+    <record id="view_order_form_add_pos_button_inherit" model="ir.ui.view">
+        <field name="name">sale.order.form.pos.button.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="pos_sale.view_order_form_inherit_pos_sale"/>
+        <field name="arch" type="xml">
+             <xpath expr="//button[@name='action_view_pos_order']" position="attributes">
+                     <attribute name="invisible">1</attribute>
+             </xpath>
+<!--            <buttom name="action_view_pos_order" position="replace">-->
+
+<!--            </buttom>-->
+
+        </field>
+    </record>
+
+
+
+    <record id="view_order_form_add_pos_button" model="ir.ui.view">
+        <field name="name">sale.order.form.pos.button</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <div class="oe_button_box" position="inside">
+                <button
+                        name="action_view_pos_orders"
+                        type="object"
+                        class="oe_stat_button"
+                        invisible="not pos_order_count"
+                        icon="fa-shopping-cart">
+                    <div class="o_stat_info">
+                        <field name="pos_order_count" widget="statinfo"
+                               string="POS Orders"
+                               invisible="not pos_order_count"/>
+                    </div>
+                </button>
+            </div>
+            <xpath expr="//header//button[@name='action_confirm']" position="before">
+                <button name="action_convert_to_pos_order"
+                        type="object"
+                        string="Convert to POS Order"
+                        class="btn-primary"
+                        invisible="is_converted_to_pos or state in 'cancel' "
+                        confirm="Are you sure you want to convert this sale order to POS order?"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="POS Orders" invisible="not pos_order_count">
+                    <field name="pos_order_ids">
+                        <list>
+                            <field name="name"/>
+                            <field name="date_order"/>
+                            <field name="amount_total"/>
+                            <field name="state"/>
+                            <!--                            <field name="session_id"/>-->
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="is_converted_to_pos" invisible="1" widget="boolean_button"
+                       options='{"terminology": "converted"}'/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_order_tree_pos_conversion" model="ir.ui.view">
+        <field name="name">sale.order.tree.pos.conversion</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="is_converted_to_pos" widget="boolean_button"/>
+                <field name="pos_conversion_date"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- إضافة زر في قائمة الأوامر -->
+    <record id="sale_order_action_convert_to_pos" model="ir.actions.server">
+        <field name="name">Convert to POS Order</field>
+        <field name="model_id" ref="model_sale_order"/>
+        <field name="binding_model_id" ref="model_sale_order"/>
+        <field name="binding_type">action</field>
+        <field name="state">code</field>
+        <field name="code">
+            action = records.action_convert_to_pos_order()
+        </field>
+    </record>
+</odoo>

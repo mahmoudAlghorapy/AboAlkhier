@@ -1,0 +1,5 @@
+<odoo>
+    <record id="group_transfer_payment_to_another_company" model="res.groups">
+        <field name="name">Transfer Payment To another Company</field>
+    </record>
+</odoo>

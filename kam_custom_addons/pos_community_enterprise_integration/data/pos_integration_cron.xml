@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_cron_pos_session_full_sync_enterprise" model="ir.cron">
+        <field name="name">Daily POS Session Full Sync to Enterprise</field>
+        <field name="model_id" ref="point_of_sale.model_pos_session"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_sync_pos_sessions_to_enterprise()</field>
+        <field name="interval_type">days</field>
+        <field name="interval_number">1</field>
+    </record>
+
+    <!-- Server action for POS session sync -->
+    <record id="action_pos_session_mark_for_sync" model="ir.actions.server">
+        <field name="name">Mark POS Session for Enterprise Sync</field>
+        <field name="model_id" ref="point_of_sale.model_pos_session"/>
+        <field name="binding_model_id" ref="point_of_sale.model_pos_session"/>
+        <field name="state">code</field>
+        <field name="code">
+          records._sync_pos_session_to_enterprise()
+        </field>
+    </record>
+
+    <record id="ir_cron_purchase_full_sync_enterprise" model="ir.cron">
+        <field name="name">Daily Purchase Full Sync to Enterprise</field>
+        <!-- Use pos.order model because the method is defined there -->
+        <field name="model_id" ref="pos_community_enterprise_integration.model_purchase_order"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_sync_purchase_orders_to_enterprise()</field>
+
+        <!-- Run once per day -->
+        <field name="interval_type">days</field>
+        <field name="interval_number">1</field>
+
+    </record>
+    <record id="action_po_mark_for_sync" model="ir.actions.server">
+        <field name="name">Mark for Enterprise Sync</field>
+        <field name="model_id" ref="purchase.model_purchase_order"/>
+        <field name="binding_model_id" ref="purchase.model_purchase_order"/>
+        <field name="state">code</field>
+        <field name="code">
+          records._sync_purchase_order_to_enterprise()
+
+        </field>
+    </record>
+
+</odoo>

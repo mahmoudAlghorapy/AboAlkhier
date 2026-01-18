@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_pos_config_integration" model="ir.sequence">
+        <field name="name">POS Config Integration Ref</field>
+        <field name="code">pos.config.seq.integ</field>
+        <field name="prefix">PCFG</field>
+        <field name="padding">5</field>
+    </record>
+
+    <record id="seq_pos_session_integration" model="ir.sequence">
+        <field name="name">POS Session Integration Ref</field>
+        <field name="code">pos.session.seq.integ</field>
+        <field name="prefix">PSES</field>
+        <field name="padding">5</field>
+    </record>
+
+    <record id="seq_pos_order_integration" model="ir.sequence">
+        <field name="name">POS Order Integration Ref</field>
+        <field name="code">pos.order.seq.integ</field>
+        <field name="prefix">PORD</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_purchase_order_integration" model="ir.sequence">
+        <field name="name">Purchase Order Integration Ref</field>
+        <field name="code">purchase.order.seq.integ</field>
+        <field name="prefix">SYNCPO</field>
+        <field name="padding">5</field>
+    </record>
+
+    <record id="seq_pos_payment_integration" model="ir.sequence">
+        <field name="name">POS Payment Integration Ref</field>
+        <field name="code">pos.payment.seq.integ</field>
+        <field name="prefix">PPAY</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

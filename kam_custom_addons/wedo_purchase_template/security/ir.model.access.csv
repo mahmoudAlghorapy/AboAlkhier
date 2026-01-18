@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_purchase_order_template,purchase_template.purchase_order_template,model_purchase_order_template,base.group_user,1,1,1,1
+access_purchase_order_template_line,purchase_template.purchase_order_template_line,model_purchase_order_template_line,base.group_user,1,1,1,1
+custom_order_tag,custom_order_tag,model_custom_order_tag,,1,1,1,1
+product_packaging,product_packaging,model_product_packaging,,1,1,1,1

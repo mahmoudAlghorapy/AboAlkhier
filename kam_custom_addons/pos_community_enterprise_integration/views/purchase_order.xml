@@ -1,0 +1,17 @@
+<odoo>
+
+    <!-- Inherit Form View to Modify it -->
+    <record id="view_purchase_order_tree_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.inherit.form</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="sync_state" decoration-info="sync_state in ('pending')" decoration-success="sync_state in ('synced')" decoration-warning="sync_state == 'failed'"/>
+                <!-- Add your fields or attributes here -->
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

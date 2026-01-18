@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <record id="change_last_check_in_to_check_out" model="ir.actions.server">
+            <field name="name">Transfer Payment To another Company</field>
+            <field name="type">ir.actions.server</field>
+            <field name="model_id" ref="model_pos_payment" />
+            <field name="group_ids" eval="[(4, ref('abo_alkhier.group_transfer_payment_to_another_company'))]"/>
+            <field name="binding_model_id" ref="abo_alkhier.model_pos_payment" />
+            <field name="state">code</field>
+            <field name="code">action = records.action_transfer_payments()</field>
+        </record>
+        <record id="action_transfer_pos_orders_to_destination" model="ir.actions.server">
+            <field name="name">Transfer order To another Company</field>
+            <field name="model_id" ref="point_of_sale.model_pos_order"/>
+
+            <field name="binding_model_id" ref="point_of_sale.model_pos_order"/>
+            <field name="binding_type">action</field>
+            <!--      <field name="binding_view_types">['list','kanban']</field>-->
+            <field name="state">code</field>
+            <field name="code">action = records.action_transfer_orders_to_destination()</field>
+        </record>
+<!--  </data>-->
+
+    </data>
+</odoo>

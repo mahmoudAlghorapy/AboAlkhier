@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherit the POS Settings view to add Integration block -->
+    <record id="view_res_config_settings_inherit_pos_integration" model="ir.ui.view">
+        <field name="name">res.config.settings.pos.integration</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Insert our block under the POS block, inside the same pos_config_id div -->
+            <xpath expr="//div[@invisible='not pos_config_id']/block[@id='restaurant_section']" position="after">
+                <div class="app_settings_block" data-key="migration_settings" string="Migration Settings">
+                    <h2>Integration Information</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="url"/>
+                                <field name="url"/><br/>
+                                <label for="db"/>
+                                <field name="db"/><br/>
+                                <label for="username"/>
+                                <field name="username"/><br/>
+                                <label for="password"/>
+                                <field name="password" password="True"/><br/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>
