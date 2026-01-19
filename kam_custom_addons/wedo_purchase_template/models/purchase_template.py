@@ -110,6 +110,31 @@ class PurchaseOrder(models.Model):
     sub_vendor_id = fields.Many2one(comodel_name="res.partner", string="Order For", required=False, )
     order_tag_ids = fields.Many2many(comodel_name="custom.order.tag", string="Order Tag", )
     ref_po_template_id = fields.Many2one('purchase.order.template', string='Ref Purchase template')
+    is_returned_order = fields.Boolean(string="Is Returned Order",  )
+
+    def _prepare_invoice(self):
+        invoice_vals = super()._prepare_invoice()
+        invoice_vals['order_tag_ids'] = [(6, 0, self.order_tag_ids.ids)]
+        invoice_vals['sub_vendor_id'] = self.sub_vendor_id.id
+        return invoice_vals
+
+    def write(self, vals):
+        res = super().write(vals)
+
+        # 🔁 Only when is_returned_order is explicitly changed
+        if 'is_returned_order' in vals:
+            for order in self:
+                for line in order.order_line:
+                    # Skip section / note lines
+                    if line.display_type:
+                        continue
+
+                    if order.is_returned_order:
+                        line.product_qty = -abs(line.product_qty)
+                    else:
+                        line.product_qty = abs(line.product_qty)
+
+        return res
 
     # sub_company_id = fields.Many2one(string='Order For', comodel_name='res.company', default=lambda self: self.env.company)
     def button_confirm(self):
@@ -300,6 +325,7 @@ class PurchaseOrder(models.Model):
                 'product_id': g.product_id.id,
                 'product_qty': g.product_qty,
                 'product_uom_id': g.product_uom_id.id,
+                'date_planned': fields.Datetime.now(),
                 'price_unit': g.price_unit,
                 'display_type': g.display_type,
             }) for g in rec.po_template_id.po_template_line_ids]
@@ -312,3 +338,36 @@ class PurchaseOrder(models.Model):
             rec.order_tag_ids = [(6, 0, rec.po_template_id.order_tag_ids.ids)]
             # for line in  rec.order_line:
             #     line.onchange_product_id()
+
+    @api.onchange('is_returned_order')
+    def _onchange_is_returned_order(self):
+        for order in self:
+            if not order.order_line:
+                return
+
+            for line in order.order_line:
+                # Skip section / note lines
+                if line.display_type:
+                    continue
+
+                if order.is_returned_order:
+                    line.product_qty = -abs(line.product_qty)
+                else:
+                    line.product_qty = abs(line.product_qty)
+
+    @api.constrains('is_returned_order', 'order_line')
+    def _check_return_order_quantities(self):
+        for order in self:
+            if not order.is_returned_order:
+                continue
+
+            invalid_lines = order.order_line.filtered(
+                lambda l: not l.display_type and l.product_qty > 0
+            )
+
+            if invalid_lines:
+                raise ValidationError(_(
+                    "This is a returned order.\n"
+                    "All product quantities must be negative.\n\n"
+                    "Please fix the quantities before saving."
+                ))

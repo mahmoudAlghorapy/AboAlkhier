@@ -25,3 +25,9 @@ class SaleOrder(models.Model):
         readonly=True,
         copy=False,
     )
+
+    def _prepare_invoice(self):
+        invoice_vals = super()._prepare_invoice()
+        invoice_vals['order_tag_ids'] = [(6, 0, self.order_tag_ids.ids)]
+        invoice_vals['sub_vendor_id'] = self.sub_vendor_id.id
+        return invoice_vals

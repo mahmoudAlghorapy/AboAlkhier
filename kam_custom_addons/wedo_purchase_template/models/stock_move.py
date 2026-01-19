@@ -59,7 +59,7 @@ class StockMove(models.Model):
             if so.name != start_name:
                 all_related_names.update(self._trace_through_chain(so.name, visited, depth + 1))
 
-            print('all_related_names',all_related_names)
+            print('all_related_names', all_related_names)
 
         return all_related_names
 
@@ -182,10 +182,98 @@ class StockPicking(models.Model):
                 '|',
                 ('purchase_id.name', '=', name),
                 ('sale_id.name', '=', name),
-                ('state', 'not in', ('done', 'cancel'))
+                ('state', 'not in', ('cancel'))
             ])
 
         return related_pickings.filtered(lambda p: p.id != self.id)
+
+    def _get_all_related_orders_across_companies(self):
+        self.ensure_one()
+
+        SaleOrder = self.env['sale.order'].sudo()
+        PurchaseOrder = self.env['purchase.order'].sudo()
+
+        start_names = set()
+
+        if self.purchase_id:
+            start_names.update([
+                self.purchase_id.name,
+                self.purchase_id.origin or '',
+                self.purchase_id.partner_ref or '',
+            ])
+
+        if self.sale_id:
+            start_names.update([
+                self.sale_id.name,
+                self.sale_id.origin or '',
+            ])
+
+        start_names = {n for n in start_names if n}
+
+        if not start_names:
+            return SaleOrder.browse(), PurchaseOrder.browse()
+
+        # 🔥 TRACE FULL CHAIN
+        all_names = set()
+        for name in start_names:
+            all_names |= self.env['stock.move']._trace_through_chain(name)
+
+        _logger.info(f"🧾 Accounting chain resolved: {sorted(all_names)}")
+
+        # 🔥 FETCH ALL ORDERS (ALL COMPANIES)
+        sale_orders = SaleOrder.search([
+            '|',
+            ('name', 'in', list(all_names)),
+            ('origin', 'in', list(all_names)),
+        ])
+
+        purchase_orders = PurchaseOrder.search([
+            '|',
+            ('name', 'in', list(all_names)),
+            ('origin', 'in', list(all_names)),
+        ])
+        print('sale_orders',sale_orders)
+        print('purchase_orders',purchase_orders)
+
+        return sale_orders, purchase_orders
+
+    def _create_and_post_bills(self, purchase_orders):
+        for po in purchase_orders:
+            po = po.sudo().with_company(po.company_id)
+
+            # 🔄 Force recompute after receipt
+            # po._compute_invoice_status()
+
+            if po.invoice_status != 'to invoice':
+                _logger.info(f"⏭️ PO {po.name} not invoiceable (status={po.invoice_status})")
+                continue
+
+            # ❌ Prevent duplicates
+            if po.invoice_ids.filtered(lambda m: m.state != 'cancel'):
+                continue
+
+            invoice_action = po.action_create_invoice()
+            if not invoice_action or not invoice_action.get('res_id'):
+                continue
+
+            bill = self.env['account.move'].browse(invoice_action['res_id'])
+            bill.invoice_date = fields.Date.today()
+            bill.action_post()
+
+            _logger.info(f"🧾 Bill created & posted for PO {po.name}")
+
+    def _create_and_post_invoices(self, sale_orders):
+        for so in sale_orders:
+            print('so.name',so.name)
+            print('so.name',so.company_id.name)
+            if so.invoice_status != 'to invoice':
+                continue
+
+            invoices = so._create_invoices()
+            for inv in invoices:
+
+
+                inv.action_post()
 
     def button_validate(self):
         if self.env.context.get('skip_intercompany_sync'):
@@ -214,22 +302,7 @@ class StockPicking(models.Model):
 
                     # 🔑 Force product_uom_qty to match synced quantity
                     move.sudo().write({'product_uom_qty': qty})
-                    #
-                    # if move.move_line_ids:
-                    #     # Update qty_done
-                    #     move.move_line_ids.sudo().write({'quantity': qty})
-                    # else:
-                    #     # Create move line if missing
-                    #     self.env['stock.move.line'].sudo().create({
-                    #         'move_id': move.id,
-                    #         'product_id': move.product_id.id,
-                    #         'product_uom_id': move.product_uom.id,
-                    #         'location_id': move.location_id.id,
-                    #         'location_dest_id': move.location_dest_id.id,
-                    #         'qty_done': qty,
-                    #         'product_uom_qty': qty,
-                    #         'picking_id': move.picking_id.id,
-                    #     })
+
 
                 # Now validate safely
                 super(StockPicking, rp).button_validate()
@@ -237,5 +310,13 @@ class StockPicking(models.Model):
 
             except Exception as e:
                 _logger.error(f"❌ Failed validating {rp.name}: {e}")
+        sale_orders, purchase_orders = picking._get_all_related_orders_across_companies()
+
+
+        # Vendor Bills (PO)
+        picking._create_and_post_bills(purchase_orders)
+
+        # Customer Invoices (SO)
+        picking._create_and_post_invoices(sale_orders)
 
         return res

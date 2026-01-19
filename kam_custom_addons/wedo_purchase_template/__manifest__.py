@@ -12,11 +12,12 @@
 	By creating custom quotation templates, you will save a lot of time.
 	Indeed, with the use of templates, you will be able to send complete quotations at a fast pace
     """,
-    'depends': ['purchase','stock','sale_management'],
+    'depends': ['purchase','stock','sale_management','account'],
 	'images': ['images/main_screenshot.png'],
     'data': [
         'security/groups.xml',
         'security/ir.model.access.csv',
+        'views/account_move.xml',
         'views/purchase_template_views.xml',
         'views/custom_order_tag.xml',
         'views/product_template_view.xml',

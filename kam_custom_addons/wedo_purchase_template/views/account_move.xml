@@ -1,0 +1,16 @@
+<odoo>
+    <!-- Inherit Form View to Modify it -->
+    <record id="account_move_form_inherit" model="ir.ui.view">
+        <field name="name">account.move.form.inherit</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                <field name="sub_vendor_id" invisible="not sub_vendor_id"/>
+                <field name="order_tag_ids" widget="many2many_tags" invisible="not order_tag_ids"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

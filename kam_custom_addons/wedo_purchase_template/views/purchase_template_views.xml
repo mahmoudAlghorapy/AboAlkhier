@@ -149,6 +149,7 @@
                            force_save="1" colspan="2"
                            groups="wedo_purchase_template.order_tag_group"/>
                     <field name="ref_po_template_id" readonly="state != 'draft'" invisible="not ref_po_template_id"/>
+                    <field name="is_returned_order" readonly="state != 'draft'"/>
                 </xpath>
             </field>
         </record>
