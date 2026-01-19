@@ -12,6 +12,7 @@
 	By creating custom quotation templates, you will save a lot of time.
 	Indeed, with the use of templates, you will be able to send complete quotations at a fast pace
     """,
+
     'depends': ['purchase','stock','sale_management','account'],
 	'images': ['images/main_screenshot.png'],
     'data': [
