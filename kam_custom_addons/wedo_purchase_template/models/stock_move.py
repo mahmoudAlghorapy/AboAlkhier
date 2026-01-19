@@ -59,7 +59,7 @@ class StockMove(models.Model):
             if so.name != start_name:
                 all_related_names.update(self._trace_through_chain(so.name, visited, depth + 1))
 
-            print('all_related_names', all_related_names)
+            # print('all_related_names', all_related_names)
 
         return all_related_names
 
@@ -232,8 +232,8 @@ class StockPicking(models.Model):
             ('name', 'in', list(all_names)),
             ('origin', 'in', list(all_names)),
         ])
-        print('sale_orders',sale_orders)
-        print('purchase_orders',purchase_orders)
+        # print('sale_orders',sale_orders)
+        # print('purchase_orders',purchase_orders)
 
         return sale_orders, purchase_orders
 
@@ -264,8 +264,8 @@ class StockPicking(models.Model):
 
     def _create_and_post_invoices(self, sale_orders):
         for so in sale_orders:
-            print('so.name',so.name)
-            print('so.name',so.company_id.name)
+            # print('so.name',so.name)
+            # print('so.name',so.company_id.name)
             if so.invoice_status != 'to invoice':
                 continue
 

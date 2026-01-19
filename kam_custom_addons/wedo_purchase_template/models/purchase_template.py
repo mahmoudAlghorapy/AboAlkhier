@@ -201,8 +201,8 @@ class PurchaseOrder(models.Model):
 
         for line in self.order_line.filtered(lambda l: not l.display_type):
             product = line.product_id
-            print('company',company.name)
-            print('product',product)
+            # print('company',company.name)
+            # print('product',product)
 
             # 1️⃣ فلترة Vendor Pricelist حسب:
             # - Vendor
@@ -272,7 +272,7 @@ class PurchaseOrder(models.Model):
             so = SaleOrder.with_company(company).with_context(skip_intercompany=True).sudo().create(so_vals)
             if not self.partner_ref:
                 self.partner_ref = so.name
-                print('self.partner_ref',self.partner_ref)
+                # print('self.partner_ref',self.partner_ref)
             so.with_company(company).with_context(skip_intercompany=True).sudo().action_confirm()
 
             # --- Purchase Order ---
@@ -310,7 +310,7 @@ class PurchaseOrder(models.Model):
                 second_so.with_company(company).with_context(skip_intercompany=True).sudo().action_confirm()
                 if not po.partner_ref:
                     po.partner_ref = second_so.name
-                print('po.partner_ref',po.partner_ref)
+                # print('po.partner_ref',po.partner_ref)
 
     @api.onchange('po_template_id')
     def onchange_po_template_id(self):
