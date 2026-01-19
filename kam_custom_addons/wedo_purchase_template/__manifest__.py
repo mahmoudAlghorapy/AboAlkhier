@@ -26,6 +26,10 @@
         'views/product_packaging_views.xml',
         'views/sale_order.xml',
         'views/product_pricelist.xml',
+        'report/purchase_report.xml',
+        'report/sale_order_report.xml',
+        'report/invoice_report.xml',
+        'report/picking_report.xml',
     ],
     'demo': [
     ],

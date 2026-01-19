@@ -146,6 +146,30 @@ class StockMove(models.Model):
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
+    sub_vendor_id = fields.Many2one(comodel_name="res.partner", string="Order For", store=True, redonly=False,
+                                    required=False, compute="compute_sub_vendor_id")
+    order_tag_ids = fields.Many2many(comodel_name="custom.order.tag", string="Order Tag",
+                                     compute="compute_sub_vendor_id")
+    ref_po_template_id = fields.Many2one('purchase.order.template', string='Ref Purchase template',
+                                         compute="compute_sub_vendor_id")
+
+    @api.depends('sale_id.sub_vendor_id', 'sale_id.order_tag_ids', 'purchase_id.sub_vendor_id',
+                 'purchase_id.order_tag_ids', )
+    def compute_sub_vendor_id(self):
+        for rec in self:
+            if rec.sale_id:
+                rec.sub_vendor_id = rec.sale_id.sub_vendor_id.id
+                rec.ref_po_template_id = rec.sale_id.ref_po_template_id.id
+                rec.order_tag_ids = [(6, 0, rec.sale_id.order_tag_ids.ids)]
+            elif rec.purchase_id:
+                rec.sub_vendor_id = rec.purchase_id.sub_vendor_id.id
+                rec.ref_po_template_id = rec.purchase_id.po_template_id.id
+                rec.order_tag_ids = [(6, 0, rec.purchase_id.order_tag_ids.ids)]
+            else:
+                rec.sub_vendor_id = False
+                rec.ref_po_template_id = False
+                rec.order_tag_ids = False
+
     def _get_super_env(self):
         company_ids = self.env['res.company'].sudo().search([]).ids
         return self.env['stock.picking'].sudo().with_context(
