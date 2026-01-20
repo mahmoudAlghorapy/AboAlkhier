@@ -286,18 +286,117 @@ class StockPicking(models.Model):
 
             _logger.info(f"🧾 Bill created & posted for PO {po.name}")
 
+    def _so_has_negative_qty(self, so):
+        return any(
+            line.product_uom_qty < 0
+            for line in so.order_line
+            if not line.display_type
+        )
+
+    def _get_delivered_qty(self, so):
+        return sum(
+            line.qty_delivered
+            for line in so.order_line
+            if not line.display_type
+        )
+
+    def _is_so_fully_invoiced_for_delivery(self, so):
+        for line in so.order_line.filtered(lambda l: not l.display_type):
+            if abs(line.qty_invoiced) < abs(line.qty_delivered):
+                return False
+        return True
+
+    def _create_refund_from_sale_order(self, so):
+        Move = self.env['account.move']
+
+        invoice_vals = so._prepare_invoice()
+        invoice_vals.update({
+            'move_type': 'out_refund',
+            'invoice_origin': so.name,
+        })
+
+        lines = []
+        for line in so.order_line.filtered(
+                lambda l: not l.display_type and l.qty_delivered < 0
+        ):
+            lines.append((0, 0, {
+                'product_id': line.product_id.id,
+                'name': line.name,
+                'quantity': abs(line.qty_delivered),  # 🔑 DELIVERED QTY
+                'price_unit': line.price_unit,
+                'tax_ids': [(6, 0, line.tax_ids.ids)],
+                'sale_line_ids': [(6, 0, line.ids)],
+            }))
+
+        if not lines:
+            return self.env['account.move']
+
+        invoice_vals['invoice_line_ids'] = lines
+
+        refund = Move.sudo().with_company(so.company_id).create(invoice_vals)
+        refund.action_post()
+
+        _logger.info("🧾 Refund created: %s for SO %s", refund.name, so.name)
+        return refund
+
     def _create_and_post_invoices(self, sale_orders):
+        created_moves = self.env['account.move']
+
         for so in sale_orders:
-            # print('so.name',so.name)
-            # print('so.name',so.company_id.name)
-            if so.invoice_status != 'to invoice':
+            so = so.sudo().with_company(so.company_id)
+
+            delivered_qty = self._get_delivered_qty(so)
+            if not delivered_qty:
                 continue
 
-            invoices = so._create_invoices()
-            for inv in invoices:
+            # 🔒 PREVENT DUPLICATES (THE FIX)
+            if self._is_so_fully_invoiced_for_delivery(so):
+                _logger.info("⏭️ SO %s already invoiced for delivered qty", so.name)
+                continue
 
+            # 🔴 RETURN → CREDIT NOTE
+            if delivered_qty < 0:
+                refund = self._create_refund_from_sale_order(so)
+                created_moves |= refund
 
-                inv.action_post()
+            # 🟢 NORMAL DELIVERY → INVOICE
+            else:
+                Move = self.env['account.move']
+
+                invoice_vals = so._prepare_invoice()
+                invoice_vals.update({
+                    'move_type': 'out_invoice',
+                    'invoice_origin': so.name,
+                })
+
+                lines = []
+                for line in so.order_line.filtered(
+                        lambda l: not l.display_type and l.qty_delivered > 0
+                ):
+                    lines.append((0, 0, {
+                        'product_id': line.product_id.id,
+                        'name': line.name,
+                        'quantity': line.qty_delivered,
+                        'price_unit': line.price_unit,
+                        'tax_ids': [(6, 0, line.tax_ids.ids)],
+                        'sale_line_ids': [(6, 0, line.ids)],
+                    }))
+
+                if not lines:
+                    continue
+
+                invoice_vals['invoice_line_ids'] = lines
+
+                invoice = Move.sudo().with_company(so.company_id).create(invoice_vals)
+                invoice.action_post()
+                created_moves |= invoice
+
+        _logger.info(
+            "🧾 Customer moves created: %s",
+            ", ".join(created_moves.mapped('name'))
+        )
+
+        return created_moves
 
     def button_validate(self):
         if self.env.context.get('skip_intercompany_sync'):
