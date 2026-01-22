@@ -40,7 +40,8 @@
         'point_of_sale._assets_pos': [
             'pos_refund_password/static/src/js/ticket_screen.js',
             'pos_refund_password/static/src/js/custom_number_buffer.js',
-            'pos_refund_password/static/src/xml/pos.xml'
+            'pos_refund_password/static/src/xml/pos.xml',
+            'pos_refund_password/static/src/xml/open_cash_readonly.xml'
         ],
     },
     'images': ['static/description/banner.png'],
