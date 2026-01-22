@@ -21,11 +21,11 @@
                                 <!--                               <field name="vendor_ids" widget="many2many_tags" required="0" colspan ="2"/>-->
                                 <field name="vendor_id"
                                        colspan="2"
-                                       domain="[('id', 'in', company_partner_ids)]"/>
+                                       />
 
                                 <field name="sub_vendor_id"
                                        colspan="2"
-                                       domain="[('id', 'in', company_partner_ids)]"/>
+                                      />
                                 <field name="order_tag_ids" widget="many2many_tags" colspan="2"
                                        groups="wedo_purchase_template.order_tag_group"/>
                                 <field
