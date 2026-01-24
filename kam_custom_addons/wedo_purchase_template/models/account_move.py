@@ -32,8 +32,8 @@ class AccountMove(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
 
-            if not vals.get('journal_id') and vals.get('stock_move_id'):
-                stock_move = self.env['stock.move'].browse(vals['stock_move_id'])
+            if not vals.get('journal_id') and vals.get('stock_move_ids'):
+                stock_move = self.env['stock.move'].browse(vals['stock_move_ids'])
                 product = stock_move.product_id
                 journal = product.categ_id.property_stock_journal
 
