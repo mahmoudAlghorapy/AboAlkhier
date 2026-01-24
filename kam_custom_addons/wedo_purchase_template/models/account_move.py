@@ -28,6 +28,21 @@ class AccountMove(models.Model):
     sub_vendor_id = fields.Many2one(comodel_name="res.partner", string="Order For", required=False, )
     order_tag_ids = fields.Many2many(comodel_name="custom.order.tag", string="Order Tag", )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+
+            if not vals.get('journal_id') and vals.get('stock_move_id'):
+                stock_move = self.env['stock.move'].browse(vals['stock_move_id'])
+                product = stock_move.product_id
+                journal = product.categ_id.property_stock_journal
+
+                if journal:
+                    vals['journal_id'] = journal.id
+        vals_list = super().create(vals_list)
+
+        return vals_list
+
     def _post(self, soft=True):
         """Post/Validate the documents.
 
