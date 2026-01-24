@@ -112,6 +112,12 @@
             <field name="model">purchase.order</field>
             <field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
             <field name="arch" type="xml">
+                <xpath expr="//field[@name='amount_total']" position="after">
+                    <field name="po_template_id" optional="show"/>
+                    <field name="sub_vendor_id" optional="show"/>
+                    <field name="order_tag_ids" optional="show" widget="many2many_tags"/>
+
+                </xpath>
                 <xpath expr="//field[@name='amount_total']" position="attributes">
                     <attribute name="groups">wedo_purchase_template.purchase_order_price_group</attribute>
                 </xpath>
