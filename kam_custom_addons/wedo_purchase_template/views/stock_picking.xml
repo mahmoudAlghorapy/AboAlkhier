@@ -1,0 +1,22 @@
+<odoo>
+    <record id="stock_picking_form_inherit_sale_template" model="ir.ui.view">
+        <field name="name">stock.picking.form</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='origin']" position="after">
+
+                <field name="sub_vendor_id"
+                       readonly="ref_po_template_id"/>
+
+                <field name="order_tag_ids"
+                       widget="many2many_tags"
+                       colspan="2"
+                       groups="wedo_purchase_template.order_tag_group"
+                       readonly="ref_po_template_id"/>
+                <field name="ref_po_template_id" invisible="not ref_po_template_id" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

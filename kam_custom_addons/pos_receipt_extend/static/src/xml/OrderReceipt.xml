@@ -3,7 +3,42 @@
 <templates id="template" xml:space="preserve">
     <t t-name="OrderReceipt" t-inherit="point_of_sale.ReceiptHeader"
        t-inherit-mode="extension" owl="1">
-        <xpath expr="//div[hasclass('pos-receipt-contact')]" position="inside">
+        <xpath expr="//div[1]" position="replace">
+        </xpath>
+        <xpath expr="//div[hasclass('pos-receipt-contact')]" position="replace">
+            <div class="pos-receipt-header" style="text-align:center; ">
+
+    <div dir="rtl">
+        <t t-esc="env.services.pos.company.name"/>
+    </div>
+
+                <div dir="rtl">
+        الهاتف:
+        <span dir="ltr">
+            <t t-esc="env.services.pos.company.phone"/>
+        </span>
+    </div>
+
+                <div dir="rtl">
+        الرقم الضريبي:
+        <span dir="ltr">
+            <t t-esc="env.services.pos.company.vat"/>
+        </span>
+    </div>
+
+                <div>--------------------------</div>
+
+                <div dir="rtl">
+        شكراً لاختيارك أبو الخير
+    </div>
+
+                <div>--------------------------</div>
+
+</div>
+
+            <div t-if="order?.getCashierName()" class="cashier">
+                    <div> <t t-esc="order.getCashierName()"/>:تم بواسطة </div>
+                </div>
             <t t-if="this.env.services.pos.config.customer_details">
                 <div t-if="this.env.services.pos.config.customer_name and this.props.data.customer_name"
                      style="font-weight:bold;">Customer Name:<t
