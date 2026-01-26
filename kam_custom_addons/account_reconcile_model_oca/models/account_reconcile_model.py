@@ -15,9 +15,9 @@ class AccountReconcileModel(models.Model):
         "one possible counterpart is found.",
     )
 
-    @api.onchange("rule_type")
-    def _onchange_rule_type(self):
-        if self.rule_type != "invoice_matching":
+    @api.onchange("trigger")
+    def _onchange_trigger(self):
+        if self.trigger != "auto_reconcile":
             self.unique_matching = False
 
     ####################################################
@@ -126,9 +126,7 @@ class AccountReconcileModel(models.Model):
         """
         self.ensure_one()
 
-        if self.rule_type == "invoice_matching" and (
-            not self.allow_payment_tolerance or self.payment_tolerance_param == 0
-        ):
+        if not self.payment_tolerance_param:
             return []
 
         currency = self.company_id.currency_id
@@ -188,57 +186,29 @@ class AccountReconcileModel(models.Model):
     ####################################################
 
     def _apply_rules(self, st_line, partner):
-        """Apply criteria to get candidates for all reconciliation models.
-        This function is called in enterprise by the reconciliation widget to match
-        the statement line with the available candidates (using the reconciliation
-        models).
-        :param st_line: The statement line to match.
-        :param partner: The partner to consider.
-        :return: A dict mapping each statement line id with:
-            * aml_ids: A list of account.move.line ids.
-            * model: An account.reconcile.model record (optional).
-            * status: 'reconciled' if the lines has been already reconciled, 'write_off'
-              if the write-off must be applied on the statement line.
-            * auto_reconcile: A flag indicating if the match is enough significant to
-              auto reconcile the candidates.
-        """
-        available_models = self.filtered(
-            lambda m: m.rule_type != "writeoff_button"
-        ).sorted()
+        available_models = self.filtered(lambda m: m.can_be_proposed)
 
         for rec_model in available_models:
             if not rec_model._is_applicable_for(st_line, partner):
                 continue
 
-            if rec_model.rule_type == "invoice_matching":
-                rules_map = rec_model._get_invoice_matching_rules_map()
-                for rule_index in sorted(rules_map.keys()):
-                    for rule_method in rules_map[rule_index]:
-                        candidate_vals = rule_method(st_line, partner)
-                        if not candidate_vals:
-                            continue
+            # Invoice / AML matching (core behavior)
+            candidate_vals = rec_model._get_invoice_matching_amls_candidates(st_line, partner)
+            if candidate_vals and candidate_vals.get("amls"):
+                res = rec_model._get_invoice_matching_amls_result(
+                    st_line, partner, candidate_vals
+                )
+                if res:
+                    return {**res, "model": rec_model}
 
-                        if candidate_vals.get("amls"):
-                            res = rec_model._get_invoice_matching_amls_result(
-                                st_line, partner, candidate_vals
-                            )
-                            if res:
-                                return {
-                                    **res,
-                                    "model": rec_model,
-                                }
-                        else:
-                            return {
-                                **candidate_vals,
-                                "model": rec_model,
-                            }
-
-            elif rec_model.rule_type == "writeoff_suggestion":
+            # Write-off suggestion
+            if rec_model.line_ids:
                 return {
                     "model": rec_model,
                     "status": "write_off",
-                    "auto_reconcile": rec_model.auto_reconcile,
+                    "auto_reconcile": rec_model.trigger == "auto_reconcile",
                 }
+
         return {}
 
     def _is_applicable_for(self, st_line, partner):
@@ -406,7 +376,7 @@ class AccountReconcileModel(models.Model):
             dotted_alias = f"{alias}." if alias else ""
             return f"{dotted_alias}date_maturity {direction}, {dotted_alias}date {direction}, {dotted_alias}id {direction}"  # noqa: E501
 
-        assert self.rule_type == "invoice_matching"
+        # assert self.rule_type == "invoice_matching"
         self.env["account.move"].flush_model()
         self.env["account.move.line"].flush_model()
 
@@ -601,8 +571,8 @@ class AccountReconcileModel(models.Model):
         """
         self.ensure_one()
 
-        if self.rule_type not in ("invoice_matching", "writeoff_suggestion"):
-            return self.env["res.partner"]
+        # if self.rule_type not in ("invoice_matching", "writeoff_suggestion"):
+        #     return self.env["res.partner"]
 
         for partner_mapping in self.partner_mapping_line_ids:
             match_payment_ref = (
@@ -766,8 +736,8 @@ class AccountReconcileModel(models.Model):
         """
         self.ensure_one()
 
-        if not self.allow_payment_tolerance:
-            return {"allow_write_off", "allow_auto_reconcile"}
+        # if not self.allow_payment_tolerance:
+        #     return {"allow_write_off", "allow_auto_reconcile"}
 
         st_line_currency = st_line.foreign_currency_id or st_line.currency_id
         st_line_amount_curr = st_line._prepare_move_line_default_vals()[1][

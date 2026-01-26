@@ -10,68 +10,64 @@
 
     <!-- PRODUCTS TABLE -->
     <xpath expr="//OrderDisplay" position="replace">
-        <div dir="rtl" style="text-align:right">
-                 <OrderDisplay order="order" t-slot-scope="scope" mode="'receipt'">
-                <t t-set="line" t-value="scope.line"/>
-                     <Orderline line="line" showTaxGroup="showTaxGroupLabels" mode="'receipt'"
-                                basic_receipt="props.basic_receipt">
-                    <li t-if="line.customerNote" class="customer-note w-100 p-2 my-1 rounded text-break">
-                        <i class="fa fa-sticky-note me-1" role="img" aria-label="Customer Note" title="Customer Note"/>
-                        <t t-esc="line.customerNote"/>
-                    </li>
-                </Orderline>
-            </OrderDisplay>
+<!--        <div dir="rtl" style="text-align:right">-->
+        <!--                 <OrderDisplay order="order" t-slot-scope="scope" mode="'receipt'">-->
+        <!--                <t t-set="line" t-value="scope.line"/>-->
+        <!--                     <Orderline line="line" showTaxGroup="showTaxGroupLabels" mode="'receipt'"-->
+        <!--                                basic_receipt="props.basic_receipt">-->
+        <!--                    <li t-if="line.customerNote" class="customer-note w-100 p-2 my-1 rounded text-break">-->
+        <!--                        <i class="fa fa-sticky-note me-1" role="img" aria-label="Customer Note" title="Customer Note"/>-->
+        <!--                        <t t-esc="line.customerNote"/>-->
+        <!--                    </li>-->
+        <!--                </Orderline>-->
+        <!--            </OrderDisplay>-->
+
+        <!--        </div>-->
+
+        <!--    </xpath>-->
+
+
+        <div style="font-size:14px;" dir="rtl">
+
+    <t t-foreach="order.lines" t-as="line" t-key="line.id">
+
+        <!-- Product name and unit -->
+        <div class="d-flex justify-content-between"
+             style="font-size:12px; margin-bottom:10px;">
+              <div dir="rtl">
+              <span style="margin-left:8px;">
+                    <t t-esc="line.getQuantity()"/>
+                </span>
+                  <span><t t-esc="line.product_id.name"/></span>
+                  <span style="font-size:12px; color:#666; margin-right:8px;">
+                / <t t-esc="line.product_id.uom_id.name"/>
+            </span>
+              </div>
+            <div dir="ltr">
+                <t t-esc="formatCurrency(line.prices.total_included)"/>
+            </div>
 
         </div>
 
-    </xpath>
+        <!-- Quantity and total price -->
+        <div class="d-flex justify-content-between"
+             style="font-size:12px; margin-bottom:10px;">
+
+<!--            &lt;!&ndash; Quantity (from right) &ndash;&gt;-->
+            <!--            <div dir="rtl">-->
+
+            <!--            </div>-->
+
+            <!-- Line total -->
 
 
-    <!--        <div style="font-size:14px;" dir="rtr">-->
+        </div>
 
+    </t>
 
-    <!--        <t t-foreach="order.lines" t-as="line" t-key="line.id">-->
+</div>
 
-
-    <!--        &lt;!&ndash; Product name (no code) &ndash;&gt;-->
-    <!--            <div style="font-weight:bold;">-->
-    <!--             <t t-esc="line.product_id.name"/>-->
-    <!--        </div>-->
-
-
-    <!--            <div class="d-flex justify-content-between"-->
-    <!--                 style="font-size:12px; margin-bottom:6px;">-->
-
-
-    <!--            &lt;!&ndash; Qty x unit price &ndash;&gt;-->
-    <!--                <div>-->
-    <!--                    <span dir="ltr">-->
-    <!--                        <t t-esc="line.getQuantity()"/>-->
-    <!--                        x-->
-    <!--                        <t t-set="unit_price"-->
-    <!--                           t-value="line.qty ? (line.total_price / line.qty) : 0"/>-->
-
-
-    <!--                        <t t-esc="formatCurrency(unit_price)"/>                    </span>-->
-    <!--            </div>-->
-
-
-    <!--                &lt;!&ndash; Line total &ndash;&gt;-->
-    <!--                <div dir="ltr">-->
-    <!--                        <t t-esc="formatCurrency(line.prices.total_included)"/>-->
-    <!--                 </div>-->
-
-
-    <!--        </div>-->
-
-
-    <!--        </t>-->
-
-
-    <!--        </div>-->
-
-
-    <!--        </xpath>-->
+            </xpath>
 
 
     <!-- ========== TOTAL ========== -->
@@ -120,9 +116,9 @@
         <div dir="rtl" class="text-center pt-3">
         السعر شامل الضريبة
         <br/>
-        المرتجع بأصل الفاتورة خلال 14 يوم للمعلبات و 24 ساعه للفريش
-        <br/>
-<!--        <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>-->
+            المرتجع بأصل الفاتورة خلال 14 يوم للمعلبات و 24 ساعه للفريش
+            <br/>
+            <!--        <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>-->
     </div>
     </xpath>
     <xpath expr="//div[contains(@class,'text-break text-start')]" position="replace">
@@ -134,26 +130,18 @@
         المرتجع بأصل الفاتورة خلال 14 يوم للمعلبات و 24 ساعه للفريش
         <br/>
    </div>
-<!--        <div t-if="order.date_order" id="order-date" t-out="order.formatDateOrTime('date_order')"/>-->
-<!--        <div class="pos-receipt-order-data text-center pt-3">-->
-<!--                <span>Powered by <b> Odoo </b></span>-->
-<!--                 <div t-if="order.date_order" id="order-date" t-out="order.formatDateOrTime('date_order')"/>-->
-<!--            </div>-->
+        <!--        <div t-if="order.date_order" id="order-date" t-out="order.formatDateOrTime('date_order')"/>-->
+        <!--        <div class="pos-receipt-order-data text-center pt-3">-->
+        <!--                <span>Powered by <b> Odoo </b></span>-->
+        <!--                 <div t-if="order.date_order" id="order-date" t-out="order.formatDateOrTime('date_order')"/>-->
+        <!--            </div>-->
 </xpath>
     <xpath expr="//div[contains(@class,'paymentlines')]" position="replace">
 
-    <t t-foreach="paymentLines" t-as="line" t-key="line.cid">
-
-        <div dir="rtl" class="d-flex justify-content-between">
-            <span>
-                <t t-esc="line.payment_method?.name or 'Cash'"/>
-            </span>
-            <span dir="ltr">
-                <t t-esc="formatCurrency(line.amount)"/>
-            </span>
-        </div>
-
-    </t>
+     <div dir="rtl" class="d-flex justify-content-between" t-foreach="paymentLines" t-as="line" t-key="line_index">
+                    <t t-esc="line.payment_method_id.name" />
+                    <span t-out="formatCurrency(line.getAmount())" class="pos-receipt-right-align font-monospace"/>
+                </div>
 
 </xpath>
 
@@ -168,8 +156,8 @@
         </div>
 
     </xpath>
-<!--     <xpath expr="//div[contains(@class,'text-center pt-3')]" position="replace">-->
-<!--    </xpath>-->
+    <!--     <xpath expr="//div[contains(@class,'text-center pt-3')]" position="replace">-->
+    <!--    </xpath>-->
 
 
 </t>

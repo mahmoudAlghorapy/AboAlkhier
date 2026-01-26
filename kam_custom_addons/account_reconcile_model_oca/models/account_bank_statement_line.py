@@ -43,14 +43,14 @@ class AccountBankStatementLine(models.Model):
         # Retrieve the partner from the 'reconcile models'.
         rec_models = self.env["account.reconcile.model"].search(
             [
-                ("rule_type", "!=", "writeoff_button"),
                 ("company_id", "=", self.company_id.id),
+                ("can_be_proposed", "=", True),
             ]
         )
-        for rec_model in rec_models:
-            partner = rec_model._get_partner_from_mapping(self)
-            if partner and rec_model._is_applicable_for(self, partner):
-                return partner
+        # for rec_model in rec_models:
+        #     partner = rec_model._get_partner_from_mapping(self)
+        #     if partner and rec_model._is_applicable_for(self, partner):
+        #         return partner
 
         # Retrieve the partner from statement line text values.
         st_line_text_values = self._get_st_line_strings_for_matching()
