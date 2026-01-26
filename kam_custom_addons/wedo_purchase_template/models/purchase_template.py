@@ -102,6 +102,14 @@ class PurchaseOrderLine(models.Model):
         compute="_compute_price_unit_and_date_planned_and_name", readonly=False, store=True,
         help="Delivery date expected from vendor. This date respectively defaults to vendor pricelist lead time then today's date.")
 
+    @api.depends('product_qty', 'product_uom_id', 'company_id', 'order_id.partner_id')
+    def _compute_price_unit_and_date_planned_and_name(self):
+        returned_lines = self.filtered(
+            lambda l: l.order_id.is_returned_order
+        )
+
+        super(PurchaseOrderLine, self - returned_lines) \
+            ._compute_price_unit_and_date_planned_and_name()
 
 class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
