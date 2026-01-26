@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <!--     This is a template extending the 'point_of_sale.ProductItem' template. -->
     <t t-name="point_of_sale.low_product_stock"
        t-inherit="point_of_sale.ProductCard" t-inherit-mode="extension" owl="1">
         <xpath expr="//div[hasclass('product-img')]" position="before">
+            <!-- Stock Alert Tag -->
             <div class="d-flex align-items-center justify-content-start"
                  style="min-height: 1.4rem; padding-left: 0.4rem;">
                 <t t-if="props.product.alert_tag">
@@ -11,10 +11,16 @@
                           style=" background-color: #a1dafc; margin-left: 25%; margin-top: 10%; padding: 1px 10px; border-radius: 5px 5px 5px 5px;">
                         <i class="fa fa-warning text-danger"
                            style="padding-right: 5px;"/>
-                        <t t-esc="this.props.product.alert_tag"/>
+                        <t t-esc="props.product.alert_tag"/>
                     </span>
                 </t>
             </div>
+
+            <!-- Price Badge -->
+            <div
+                 class="price-badge position-absolute top-0 end-0 m-1"
+                 style="background: linear-gradient(135deg, #714B67, #8B5E83); color: white; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 0.8rem; z-index: 10;">
+<t t-esc="env.utils.formatCurrency(props.product.list_price)"/>            </div>
         </xpath>
     </t>
 </odoo>

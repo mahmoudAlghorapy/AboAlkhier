@@ -53,6 +53,15 @@ class ProductProduct(models.Model):
             else:
                 rec.alert_tag = False
 
+    @api.model
+    def _load_pos_data_fields(self, config_id):
+        result = super()._load_pos_data_fields(config_id)
+        result += [
+            'alert_tag',
+            'list_price',  # ✅ THIS ONE
+        ]
+        return result
+
 
     alert_state = fields.Boolean(string='Product Alert State',
                                  compute='_compute_alert_state',

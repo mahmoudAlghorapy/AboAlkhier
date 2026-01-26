@@ -153,6 +153,12 @@ class StockPicking(models.Model):
     ref_po_template_id = fields.Many2one('purchase.order.template', string='Ref Purchase template',
                                          compute="compute_sub_vendor_id")
 
+
+    def force_set_quantity(self):
+
+        for rec in self.move_ids:
+            rec.quantity = rec.product_uom_qty
+
     @api.depends('sale_id.sub_vendor_id', 'sale_id.order_tag_ids', 'purchase_id.sub_vendor_id',
                  'purchase_id.order_tag_ids', )
     def compute_sub_vendor_id(self):
