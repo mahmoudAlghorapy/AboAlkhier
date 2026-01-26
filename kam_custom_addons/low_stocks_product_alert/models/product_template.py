@@ -88,10 +88,3 @@ class ProductTemplate(models.Model):
                 rec.color_field = 'white'
                 rec.alert_tag = False
 
-    @api.model
-    def _load_pos_data_fields(self, config_id):
-        """This method is used to load additional fields in the POS"""
-        result = super()._load_pos_data_fields(config_id)
-        result.append('alert_tag')
-        result.append('lst_price')
-        return result
