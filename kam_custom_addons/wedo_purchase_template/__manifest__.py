@@ -13,7 +13,7 @@
 	Indeed, with the use of templates, you will be able to send complete quotations at a fast pace
     """,
 
-    'depends': ['purchase','stock','sale_management','account'],
+    'depends': ['purchase','stock','sale_management','account','l10n_eg_edi_eta'],
 	'images': ['images/main_screenshot.png'],
     'data': [
         'security/groups.xml',
