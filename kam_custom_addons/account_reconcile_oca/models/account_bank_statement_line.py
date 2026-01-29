@@ -126,6 +126,11 @@ class AccountBankStatementLine(models.Model):
     aggregate_id = fields.Integer(compute="_compute_reconcile_aggregate")
     aggregate_name = fields.Char(compute="_compute_reconcile_aggregate")
 
+    @api.onchange('statement_id')
+    def _onchange_statement_id(self):
+        if self.statement_id:
+            self.journal_id = self.statement_id.journal_id
+
     @api.model
     def _reconcile_aggregate_map(self):
         lang = self.env["res.lang"]._lang_get(self.env.user.lang)

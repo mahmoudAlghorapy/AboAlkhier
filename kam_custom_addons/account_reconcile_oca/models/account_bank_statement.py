@@ -1,11 +1,17 @@
 # Copyright 2024 Dixmit
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
-from odoo import models, api
+from odoo import models, api, fields
 from odoo.tools.safe_eval import safe_eval
 
 
 class AccountBankStatement(models.Model):
     _inherit = "account.bank.statement"
+
+    journal_id = fields.Many2one(
+        comodel_name='account.journal',
+        required=True,
+        check_company=True,
+    )
 
     def action_open_statement(self):
         self.ensure_one()
