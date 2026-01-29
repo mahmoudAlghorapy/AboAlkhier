@@ -17,6 +17,46 @@ class PosOrder(models.Model):
         index=True,
     )
 
+    def action_sign_eta_invoices(self):
+        """
+        Create invoices from POS orders and send them to ETA
+        """
+        # 1) Validate orders
+        orders = self.filtered(lambda o: o.state in ('paid', 'done'))
+        if not orders:
+            raise UserError(_('Please select paid POS orders only.'))
+
+        orders = orders.filtered(lambda o: o.company_id.country_code == 'EG')
+        if not orders:
+            raise UserError(_('Selected orders are not for Egyptian companies.'))
+
+        invoices = self.env['account.move']
+
+        for order in orders:
+            if order.account_move:
+                invoices |= order.account_move
+            else:
+                # استخدم _generate_pos_order_invoice بدلاً من action_pos_order_invoice
+                invoice = order._generate_pos_order_invoice()
+                invoices |= invoice
+
+        invoices.filtered(lambda m: m.state == 'draft').action_post()
+
+        invoices.action_post_sign_invoices()
+
+        message = _('Successfully created and signed %s invoice(s) with ETA') % len(invoices)
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('ETA Signing Complete'),
+                'message': message,
+                'type': 'success',
+                'sticky': False,
+                'next': {'type': 'ir.actions.act_window_close'},
+            }
+        }
+
     def _get_destination_or_raise(self, order):
         if not order.company_id:
             raise UserError(_("Order %s has no company set.") % (order.name or order.id))
@@ -133,6 +173,26 @@ class PosOrder(models.Model):
 
         return mapped_method[:1] if mapped_method else False
 
+    def _next_pos_order_name(self, company):
+        Sequence = self.env['ir.sequence'].sudo()
+
+        sequence = Sequence.search([
+            ('code', '=', 'pos.order.manual'),
+            ('company_id', '=', company.id),
+        ], limit=1)
+
+        if not sequence:
+            sequence = Sequence.create({
+                'name': f'POS Order Manual - {company.name}',
+                'code': 'pos.order.manual',
+                'prefix': 'ORDER - ',
+                'padding': 6,
+                'company_id': company.id,
+                'implementation': 'no_gap',
+            })
+
+        return sequence.next_by_id()
+
     def action_transfer_orders_to_destination(self):
         orders = (self or self.env['pos.order'].browse(
             self.env.context.get("active_ids", [])
@@ -233,7 +293,8 @@ class PosOrder(models.Model):
                     continue
 
                 # Generate sequential numbers for the new copy
-                new_order_name = f"Order - {current_order_number:06d}"
+                # new_order_name = f"Order - {current_order_number:06d}"
+                new_order_name = self._next_pos_order_name(dest)
                 new_pos_reference = f"RCPT-{current_receipt_number:06d}"
 
                 # DEBUG: Log generated numbers

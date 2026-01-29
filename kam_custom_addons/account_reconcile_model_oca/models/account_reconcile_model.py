@@ -117,67 +117,38 @@ class AccountReconcileModel(models.Model):
         return new_aml_dicts
 
     def _get_write_off_move_lines_dict(self, residual_balance, partner_id, label=None):
-        """Get move.lines dict corresponding to the reconciliation model's write-off
-        lines.
-        :param residual_balance: The residual balance of the account on the manual
-          reconciliation widget.
-        :return: A list of dict representing move.lines to be created corresponding to
-          the write-off lines.
+        """
+        Odoo 19: payment tolerance parameters were removed.
+        Always rely on reconciliation lines definition.
         """
         self.ensure_one()
 
-        if not self.payment_tolerance_param:
-            return []
-
         currency = self.company_id.currency_id
-
         lines_vals_list = []
+
         for line in self.line_ids:
-            balance = 0
+            balance = 0.0
+
             if line.amount_type == "percentage":
                 balance = currency.round(residual_balance * (line.amount / 100.0))
             elif line.amount_type == "fixed":
                 balance = currency.round(
                     line.amount * (1 if residual_balance > 0.0 else -1)
                 )
-            elif line.amount_type == "regex":
-                m = re.findall(line.amount_string, label or "")
+            elif line.amount_type == "regex" and label:
+                m = re.findall(line.amount_string, label)
                 if m:
                     extracted_amount = float(m[0])
                     balance = currency.round(
                         extracted_amount * (1 if residual_balance > 0.0 else -1)
                     )
-                else:
-                    balance = 0.0
-            else:
-                balance = 0.0
 
             if currency.is_zero(balance):
                 continue
 
             writeoff_line = line._get_write_off_move_line_dict(balance, currency)
             lines_vals_list.append(writeoff_line)
-
             residual_balance -= balance
-
-            if line.tax_ids:
-                taxes = line.tax_ids
-                detected_fiscal_position = self.env[
-                    "account.fiscal.position"
-                ]._get_fiscal_position(self.env["res.partner"].browse(partner_id))
-                if detected_fiscal_position:
-                    taxes = detected_fiscal_position.map_tax(taxes)
-                writeoff_line["tax_ids"] += [Command.set(taxes.ids)]
-                # Multiple taxes with force_tax_included results in wrong computation,
-                # so we only allow to set the force_tax_included field if we have one
-                # tax selected
-                if line.force_tax_included:
-                    taxes = taxes[0].with_context(force_price_include=True)
-                tax_vals_list = self._get_taxes_move_lines_dict(taxes, writeoff_line)
-                lines_vals_list += tax_vals_list
-                if not line.force_tax_included:
-                    for tax_line in tax_vals_list:
-                        residual_balance -= tax_line["balance"]
 
         return lines_vals_list
 
@@ -557,41 +528,56 @@ class AccountReconcileModel(models.Model):
         rules_map[10].append(self._get_invoice_matching_amls_candidates)
         return rules_map
 
+    # def _get_partner_from_mapping(self, st_line):
+    #     """Find partner with mapping defined on model.
+    #     For invoice matching rules, matches the statement line against each
+    #     regex defined in partner mapping, and returns the partner corresponding
+    #     to the first one matching.
+    #     :param st_line (Model<account.bank.statement.line>):
+    #         The statement line that needs a partner to be found
+    #     :return Model<res.partner>:
+    #         The partner found from the mapping. Can be empty an empty recordset
+    #         if there was nothing found from the mapping or if the function is
+    #         not applicable.
+    #     """
+    #     self.ensure_one()
+    #
+    #     # if self.rule_type not in ("invoice_matching", "writeoff_suggestion"):
+    #     #     return self.env["res.partner"]
+    #
+    #     for partner_mapping in self.partner_mapping_line_ids:
+    #         match_payment_ref = (
+    #             re.match(partner_mapping.payment_ref_regex, st_line.payment_ref)
+    #             if partner_mapping.payment_ref_regex
+    #             else True
+    #         )
+    #         match_narration = (
+    #             re.match(
+    #                 partner_mapping.narration_regex,
+    #                 tools.html2plaintext(st_line.narration or "").rstrip(),
+    #             )
+    #             if partner_mapping.narration_regex
+    #             else True
+    #         )
+    #
+    #         if match_payment_ref and match_narration:
+    #             return partner_mapping.partner_id
+    #     return self.env["res.partner"]
     def _get_partner_from_mapping(self, st_line):
-        """Find partner with mapping defined on model.
-        For invoice matching rules, matches the statement line against each
-        regex defined in partner mapping, and returns the partner corresponding
-        to the first one matching.
-        :param st_line (Model<account.bank.statement.line>):
-            The statement line that needs a partner to be found
-        :return Model<res.partner>:
-            The partner found from the mapping. Can be empty an empty recordset
-            if there was nothing found from the mapping or if the function is
-            not applicable.
-        """
         self.ensure_one()
 
-        # if self.rule_type not in ("invoice_matching", "writeoff_suggestion"):
-        #     return self.env["res.partner"]
+        if hasattr(self, "partner_mapping_line_ids"):
+            for partner_mapping in self.partner_mapping_line_ids:
+                if (
+                        (not partner_mapping.payment_ref_regex or re.match(partner_mapping.payment_ref_regex,
+                                                                           st_line.payment_ref or ""))
+                        and
+                        (not partner_mapping.narration_regex or re.match(partner_mapping.narration_regex,
+                                                                         tools.html2plaintext(st_line.narration or "")))
+                ):
+                    return partner_mapping.partner_id
 
-        for partner_mapping in self.partner_mapping_line_ids:
-            match_payment_ref = (
-                re.match(partner_mapping.payment_ref_regex, st_line.payment_ref)
-                if partner_mapping.payment_ref_regex
-                else True
-            )
-            match_narration = (
-                re.match(
-                    partner_mapping.narration_regex,
-                    tools.html2plaintext(st_line.narration or "").rstrip(),
-                )
-                if partner_mapping.narration_regex
-                else True
-            )
-
-            if match_payment_ref and match_narration:
-                return partner_mapping.partner_id
-        return self.env["res.partner"]
+        return self.mapped_partner_id or self.env["res.partner"]
 
     def _get_invoice_matching_amls_result(self, st_line, partner, candidate_vals):  # noqa: C901
         def _create_result_dict(amls_values_list, status):

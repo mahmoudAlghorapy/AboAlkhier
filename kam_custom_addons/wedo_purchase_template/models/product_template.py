@@ -1,5 +1,5 @@
 
-from odoo import models, fields
+from odoo import models, fields,api
 
 
 class ProductTemplate(models.Model):
@@ -17,4 +17,10 @@ class ProductCategory(models.Model):
         string="Companies",
         comodel_name="res.company",
     )
+
+    @api.model
+    def _load_pos_data_fields(self, config_id):
+        params = super()._load_pos_data_fields(config_id)
+        params += ['company_ids']
+        return params
 

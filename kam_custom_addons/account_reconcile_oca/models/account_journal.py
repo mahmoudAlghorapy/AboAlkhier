@@ -28,18 +28,16 @@ class AccountJournal(models.Model):
 
     def get_rainbowman_message(self):
         self.ensure_one()
-        if (
-            self._get_journal_dashboard_data_batched()[self.id]["number_to_reconcile"]
-            > 0
-        ):
+
+        dashboard = self._get_journal_dashboard_data_batched().get(self.id, {})
+        number_to_reconcile = dashboard.get("number_to_reconcile", 0)
+
+        if number_to_reconcile > 0:
             return False
+
         return _("Well done! Everything has been reconciled")
 
     def open_action(self):
-        """
-        Return OCA *Reconcile All* when core *Bank Statements* tree is requested;
-        leave other actions unchanged.
-        """
         action = super().open_action()
         if action.get("xml_id") == "account.action_bank_statement_tree":
             action = self.env["ir.actions.actions"]._for_xml_id(

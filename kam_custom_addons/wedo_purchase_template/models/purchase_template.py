@@ -159,6 +159,11 @@ class PurchaseOrder(models.Model):
             if order.po_template_id:
                 if order.po_template_id.internal_transfer:
                     order.with_context(skip_intercompany=True)._create_related_orders_from_template()
+            if order.picking_ids:
+                for pic in order.picking_ids:
+                    for move in pic.move_ids:
+                        move.quantity = 0.0
+
 
         return res
 
@@ -290,6 +295,10 @@ class PurchaseOrder(models.Model):
                 if not po.origin:
                     po.origin = so.name
                 po.with_company(company).with_context(skip_intercompany=True).sudo().button_confirm()
+                if po.picking_ids:
+                    for pic in po.picking_ids:
+                        for move in pic.move_ids:
+                            move.quantity = 0.0
 
         # =====================================================
         # 2️⃣ sub_vendor_id → SO only (draft)

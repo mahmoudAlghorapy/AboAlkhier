@@ -5,9 +5,9 @@
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
 
-            <xpath expr="//button[@name='action_confirm']" position="after">
+            <xpath expr="//button[@name='do_print_picking']" position="after">
 
-                    <button name="force_set_quantity" invisible="state  in ('cancel', 'done')" string="Set Quantity" type="object" class="oe_highlight" />
+                    <button name="force_set_quantity" invisible="picking_type_code in ('incoming') or state  in ('cancel', 'done')" string="Set Quantity" type="object" class="oe_highlight" />
 
             </xpath>
             <xpath expr="//field[@name='origin']" position="after">

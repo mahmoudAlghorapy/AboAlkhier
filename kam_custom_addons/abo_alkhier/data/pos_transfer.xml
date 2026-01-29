@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <data>
-
+        <record id="action_sign_pos_orders_eta" model="ir.actions.server">
+            <field name="name">Sign ETA Invoices</field>
+            <field name="state">code</field>
+            <field name="model_id" ref="point_of_sale.model_pos_order"/>
+            <field name="binding_model_id" ref="point_of_sale.model_pos_order"/>
+            <field name="code">
+                action = records.action_sign_eta_invoices()
+            </field>
+        </record>
+        <record id="seq_pos_order_manual" model="ir.sequence">
+            <field name="name">POS Order Manual</field>
+            <field name="code">pos.order.manual</field>
+            <field name="prefix">ORDER - </field>
+            <field name="padding">6</field>
+            <field name="company_id" eval="False"/>
+        </record>
         <record id="change_last_check_in_to_check_out" model="ir.actions.server">
             <field name="name">Transfer Payment To another Company</field>
             <field name="type">ir.actions.server</field>
-            <field name="model_id" ref="model_pos_payment" />
+            <field name="model_id" ref="model_pos_payment"/>
             <field name="group_ids" eval="[(4, ref('abo_alkhier.group_transfer_payment_to_another_company'))]"/>
-            <field name="binding_model_id" ref="abo_alkhier.model_pos_payment" />
+            <field name="binding_model_id" ref="abo_alkhier.model_pos_payment"/>
             <field name="state">code</field>
             <field name="code">action = records.action_transfer_payments()</field>
         </record>
@@ -21,7 +36,7 @@
             <field name="state">code</field>
             <field name="code">action = records.action_transfer_orders_to_destination()</field>
         </record>
-<!--  </data>-->
+        <!--  </data>-->
 
     </data>
 </odoo>
