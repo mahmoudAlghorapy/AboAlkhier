@@ -1,15 +1,31 @@
 <odoo>
 
     <!-- Inherit Form View to Modify it -->
-    <record id="pos_order_form_inherit" model="ir.ui.view">
-        <field name="name">pos.order.form</field>
+    <record id="pos_order_tree_inherit" model="ir.ui.view">
+        <field name="name">pos.order.tree</field>
         <field name="model">pos.order</field>
         <field name="inherit_id" ref="point_of_sale.view_pos_order_tree"/>
         <field name="arch" type="xml">
 
             <xpath expr="//field[@name='state']" position="after">
-            <field name="is_transferred"/>
+                <field name="is_transferred"/>
                 <!-- Add your fields or attributes here -->
+            </xpath>
+
+        </field>
+    </record>
+    <record id="pos_order_form_note_inherit" model="ir.ui.view">
+        <field name="name">pos.order.form.inherit</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_pos_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//div[hasclass('clearfix')]" position="after">
+                <group name="note_group" col="6" class="mt-2 mt-md-0">
+                    <group colspan="4" class="order-1 order-lg-0">
+                        <field colspan="2" name="sale_notes" nolabel="1" placeholder="Terms and conditions..."/>
+                    </group>
+                </group>
             </xpath>
 
         </field>

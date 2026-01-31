@@ -3,6 +3,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tools.misc import format_datetime
 import logging
 from datetime import datetime
+from odoo.tools import html2plaintext
 
 _logger = logging.getLogger(__name__)
 
@@ -155,6 +156,7 @@ class SaleOrder(models.Model):
             'user_id': self.env.user.id,
             'amount_tax': sale_order.amount_tax,
             'amount_total': sale_order.amount_total,
+            'sale_notes': html2plaintext(sale_order.note or ''),
             'amount_paid': 0,  # سيتم الدفع لاحقاً في POS
             'amount_return': 0,
             'state': 'draft',
@@ -165,6 +167,8 @@ class SaleOrder(models.Model):
 
         # إضافة المنتجات
         for line in sale_order.order_line:
+            if line.display_type:
+                continue
             self._create_pos_order_line(line, pos_order)
 
         # حفظ المرجع في أمر البيع

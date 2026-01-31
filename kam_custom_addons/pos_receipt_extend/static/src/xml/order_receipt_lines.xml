@@ -33,21 +33,42 @@
 
         <!-- Product name and unit -->
         <div class="d-flex justify-content-between"
-             style="font-size:12px; margin-bottom:10px;">
-              <div dir="rtl">
-              <span style="margin-left:8px;">
-                    <t t-esc="line.getQuantity()"/>
-                </span>
-                  <span><t t-esc="line.product_id.name"/></span>
-                  <span style="font-size:12px; color:#666; margin-right:8px;">
-                / <t t-esc="line.product_id.uom_id.name"/>
-            </span>
-              </div>
-            <div dir="ltr">
-                <t t-esc="formatCurrency(line.prices.total_included)"/>
-            </div>
+             style="font-size:12px; margin-bottom:10px; white-space:nowrap;">
 
-        </div>
+    <!-- RIGHT TO LEFT SIDE -->
+            <div dir="rtl" style="white-space:nowrap;">
+
+        <span style="margin-left:6px;">
+            <t t-esc="line.getQuantity()"/>
+        </span>
+
+                <span>
+            <t t-esc="line.product_id.name"/>
+        </span>
+
+                <span style="font-size:12px; color:#666; margin-right:6px;">
+            / <t t-esc="line.product_id.uom_id.name"/>
+        </span>
+
+                <!-- UNIT PRICE -->
+                <span style="color:#888; margin-right:6px;">
+            <t t-if="line.getQuantity()">
+                <t t-esc="formatCurrency(line.prices.total_included / line.getQuantity())"/>
+            </t>
+                    <t t-else="">0</t>
+        </span>
+
+    </div>
+
+            <!-- LEFT TO RIGHT SIDE -->
+            <div dir="ltr" style="white-space:nowrap;">
+        <span>
+            <t t-esc="formatCurrency(line.prices.total_included)"/>
+        </span>
+    </div>
+
+</div>
+
 
         <!-- Quantity and total price -->
         <div class="d-flex justify-content-between"
@@ -112,10 +133,18 @@
     <!--    </xpath>-->
 
     <!-- ========== PAYMENTS ========== -->
+    <xpath expr="//div[hasclass('d-flex pt-3')]" position="replace">
+    </xpath>
     <xpath expr="//div[hasclass('text-break text-end')]" position="replace">
         <div dir="rtl" class="text-center pt-3">
-        السعر شامل الضريبة
-        <br/>
+            <t t-if="order.sale_notes">
+                ملحوظه:
+    <t t-out="order.sale_notes"/>
+</t>
+            <br/>
+
+            السعر شامل الضريبة
+            <br/>
             المرتجع بأصل الفاتورة خلال 14 يوم للمعلبات و 24 ساعه للفريش
             <br/>
             <!--        <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>-->
@@ -139,8 +168,8 @@
     <xpath expr="//div[contains(@class,'paymentlines')]" position="replace">
 
      <div dir="rtl" class="d-flex justify-content-between" t-foreach="paymentLines" t-as="line" t-key="line_index">
-                    <t t-esc="line.payment_method_id.name" />
-                    <span t-out="formatCurrency(line.getAmount())" class="pos-receipt-right-align font-monospace"/>
+                    <t t-esc="line.payment_method_id.name"/>
+         <span t-out="formatCurrency(line.getAmount())" class="pos-receipt-right-align font-monospace"/>
                 </div>
 
 </xpath>

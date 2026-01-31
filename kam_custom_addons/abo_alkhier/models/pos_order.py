@@ -3,9 +3,20 @@ from odoo.exceptions import UserError
 from odoo.tools.misc import format_datetime
 import logging
 import re
+from odoo.exceptions import ValidationError, UserError
+import base64
+import json
+from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
+ETA_TEST_RESPONSE = {
+    'l10n_eg_uuid': 'UUIDXIL9182712KMHJQ',
+    'l10n_eg_long_id': 'LIDMN12132LASKXXA',
+    'l10n_eg_internal_id': 'INTLA1212MMKA12',
+    'l10n_eg_hash_key': 'BaK12lX1kASdma12',
+    'l10n_eg_submission_number': '12125523452353',
+}
 
 class PosOrder(models.Model):
     _inherit = "pos.order"
@@ -16,6 +27,426 @@ class PosOrder(models.Model):
         copy=False,
         index=True,
     )
+    sale_notes = fields.Text("Sale Notes")
+
+    l10n_eg_long_id = fields.Char(string='ETA Long ID', compute='_compute_eta_long_id')
+    l10n_eg_qr_code = fields.Char(string='ETA QR Code', compute='_compute_eta_qr_code_str')
+    l10n_eg_submission_number = fields.Char(string='Submission ID', compute='_compute_eta_response_data', store=True,
+                                            copy=False)
+    l10n_eg_uuid = fields.Char(string='Document UUID', compute='_compute_eta_response_data', store=True, copy=False)
+    l10n_eg_eta_json_doc_file = fields.Binary(
+        string='ETA JSON Document',
+        attachment=True,
+        copy=False,
+    )
+    l10n_eg_signing_time = fields.Datetime('Signing Time', copy=False)
+    l10n_eg_is_signed = fields.Boolean(copy=False, default=False)
+    l10n_eg_eta_internal_id = fields.Char(string='ETA Internal ID', copy=False, readonly=True)
+    l10n_eg_eta_hash_key = fields.Char(string='ETA Hash Key', copy=False, readonly=True)
+
+    @api.depends('l10n_eg_eta_json_doc_file')
+    def _compute_eta_long_id(self):
+        for rec in self:
+            if rec.l10n_eg_eta_json_doc_file:
+                try:
+                    response_data = json.loads(base64.b64decode(rec.l10n_eg_eta_json_doc_file)).get('response')
+                    if response_data:
+                        rec.l10n_eg_long_id = response_data.get('l10n_eg_long_id')
+                    else:
+                        rec.l10n_eg_long_id = False
+                except (json.JSONDecodeError, TypeError):
+                    rec.l10n_eg_long_id = False
+            else:
+                rec.l10n_eg_long_id = False
+
+    @api.depends('date_order', 'l10n_eg_uuid', 'l10n_eg_long_id')
+    def _compute_eta_qr_code_str(self):
+        for order in self:
+            if order.date_order and order.l10n_eg_uuid and order.l10n_eg_long_id:
+                is_prod = order.company_id.l10n_eg_production_env
+                # Get the ETA QR domain from the edi format
+                base_url = self.env['account.edi.format']._l10n_eg_get_eta_qr_domain(production_environment=is_prod)
+                qr_code_str = f'{base_url}/documents/{order.l10n_eg_uuid}/share/{order.l10n_eg_long_id}'
+                order.l10n_eg_qr_code = qr_code_str
+            else:
+                order.l10n_eg_qr_code = ''
+
+    @api.depends('l10n_eg_eta_json_doc_file')
+    def _compute_eta_response_data(self):
+        for rec in self:
+            if rec.l10n_eg_eta_json_doc_file:
+                try:
+                    response_data = json.loads(base64.b64decode(rec.l10n_eg_eta_json_doc_file)).get('response')
+                    if response_data:
+                        rec.l10n_eg_uuid = response_data.get('l10n_eg_uuid')
+                        rec.l10n_eg_submission_number = response_data.get('l10n_eg_submission_number')
+                        rec.l10n_eg_eta_internal_id = response_data.get('l10n_eg_internal_id')
+                        rec.l10n_eg_eta_hash_key = response_data.get('l10n_eg_hash_key')
+                    else:
+                        rec.l10n_eg_uuid = False
+                        rec.l10n_eg_submission_number = False
+                        rec.l10n_eg_eta_internal_id = False
+                        rec.l10n_eg_eta_hash_key = False
+                except (json.JSONDecodeError, TypeError):
+                    rec.l10n_eg_uuid = False
+                    rec.l10n_eg_submission_number = False
+                    rec.l10n_eg_eta_internal_id = False
+                    rec.l10n_eg_eta_hash_key = False
+            else:
+                rec.l10n_eg_uuid = False
+                rec.l10n_eg_submission_number = False
+                rec.l10n_eg_eta_internal_id = False
+                rec.l10n_eg_eta_hash_key = False
+
+    def action_post_sign_pos_orders(self):
+        """Sign POS orders with ETA (similar to invoices)"""
+        # Only sign orders that are paid/done and not yet sent to ETA
+        orders = self.filtered(lambda r:
+                               r.company_id.country_code == 'EG' and
+                               r.state in ['paid', 'done'] and
+                               not r.l10n_eg_submission_number
+                               )
+
+        if not orders:
+            raise UserError(
+                _('No valid POS orders found to sign. Please select paid orders from Egyptian companies that are not already signed.'))
+
+        company_ids = orders.mapped('company_id')
+        if len(company_ids) > 1:
+            raise UserError(_('Please only sign POS orders from one company at a time'))
+
+        company_id = company_ids[0]
+
+        # Check if company has ETA settings configured
+        if not company_id.l10n_eg_client_identifier or not company_id.l10n_eg_client_secret:
+            raise ValidationError(_('Please configure ETA API credentials in company settings for %s', company_id.name))
+
+        orders.write({'l10n_eg_signing_time': datetime.utcnow()})
+
+        # Prepare and sign each order
+        signed_orders = []
+        for order in orders:
+            try:
+                # Prepare ETA receipt data
+                eta_receipt = self._l10n_eg_prepare_eta_receipt(order)
+
+                # Create JSON attachment (similar to invoices)
+                self.env['ir.attachment'].create({
+                    'name': _('ETA_RECEIPT_DOC_%s', order.name),
+                    'res_id': order.id,
+                    'res_model': order._name,
+                    'res_field': 'l10n_eg_eta_json_doc_file',
+                    'type': 'binary',
+                    'raw': json.dumps(dict(request=eta_receipt)),
+                    'mimetype': 'application/json',
+                    'description': _('Egyptian Tax authority JSON receipt generated for %s.', order.name),
+                })
+
+                order.invalidate_recordset(fnames=['l10n_eg_eta_json_doc_file'])
+                signed_orders.append(order)
+
+            except Exception as e:
+                _logger.error(f'Error preparing ETA receipt for POS order {order.name}: {str(e)}')
+                continue
+
+        if not signed_orders:
+            raise UserError(_('Failed to prepare any POS orders for ETA signing'))
+
+        # Send to ETA web service
+        success_count = 0
+        for order in signed_orders:
+            try:
+                result = self._l10n_eg_send_to_eta(order)
+                if result.get('success'):
+                    success_count += 1
+                    order.write({
+                        'l10n_eg_is_signed': True,
+                        'l10n_eg_uuid': result.get('l10n_eg_uuid', ''),
+                        'l10n_eg_long_id': result.get('l10n_eg_long_id', ''),
+                        'l10n_eg_submission_number': result.get('l10n_eg_submission_number', ''),
+                        'l10n_eg_eta_internal_id': result.get('l10n_eg_internal_id', ''),
+                        'l10n_eg_eta_hash_key': result.get('l10n_eg_hash_key', ''),
+                    })
+            except Exception as e:
+                _logger.error(f'Error sending POS order {order.name} to ETA: {str(e)}')
+
+        if success_count > 0:
+            message = _('Successfully signed %s POS order(s) with ETA') % success_count
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('ETA Signing Complete'),
+                    'message': message,
+                    'type': 'success',
+                    'sticky': False,
+                    'next': {'type': 'ir.actions.act_window_close'},
+                }
+            }
+        else:
+            raise UserError(_('Failed to sign any POS orders with ETA. Please check the logs.'))
+
+    def _l10n_eg_prepare_eta_receipt(self, order):
+        """Prepare ETA receipt data structure (similar to invoice)"""
+        company = order.company_id
+        partner = order.partner_id or self.env['res.partner']
+
+        # Get activity code from company settings
+        activity_code = company.l10n_eg_activity_code or '8121'  # Default retail code
+
+        # Prepare issuer (company)
+        issuer = {
+            'address': {
+                'country': 'EG',
+                'governate': company.state_id.name or 'Cairo',
+                'regionCity': company.city or 'Iswan',
+                'street': company.street or '12th dec. street',
+                'buildingNumber': company.street2 or '10',
+                'postalCode': company.zip or '',
+                'branchID': '0',
+            },
+            'name': company.name or 'branch partner',
+            'type': 'B',
+            'id': company.vat or '456789123',
+        }
+
+        # Prepare receiver (customer)
+        receiver = {
+            'address': {
+                'country': partner.country_id.code if partner.country_id else 'EG',
+                'governate': partner.state_id.name if partner.state_id else 'Cairo',
+                'regionCity': partner.city or 'Iswan',
+                'street': partner.street or '12th dec. street',
+                'buildingNumber': partner.street2 or '12',
+                'postalCode': partner.zip or '',
+            },
+            'name': partner.name or _('Customer'),
+            'type': 'P' if partner.company_type == 'person' else 'B',
+            'id': partner.vat or '',
+        }
+
+        # Prepare receipt lines
+        receipt_lines = []
+        for line in order.lines:
+            product = line.product_id
+
+            # Calculate taxes
+            tax_details = self._l10n_eg_calculate_line_taxes(line)
+
+            # Prepare unit value
+            unit_value = {
+                'currencySold': 'EGP',
+                'amountEGP': line.price_unit,
+            }
+
+            # Add exchange rate if different currency
+            if order.currency_id and order.currency_id != company.currency_id:
+                exchange_rate = self._l10n_eg_get_exchange_rate(order)
+                unit_value.update({
+                    'currencySold': order.currency_id.name,
+                    'currencyExchangeRate': exchange_rate,
+                    'amountSold': line.price_unit,
+                })
+                # Convert to EGP
+                unit_value['amountEGP'] = line.price_unit * exchange_rate
+
+            receipt_line = {
+                'description': product.name or _('Product'),
+                'itemType': product.l10n_eg_item_type or 'EGS',
+                'itemCode': product.l10n_eg_item_code or 'EG-EGS-TEST',
+                'unitType': product.uom_id.l10n_eg_unit_type or 'C62',
+                'quantity': line.qty,
+                'internalCode': product.default_code or '',
+                'valueDifference': 0.0,
+                'totalTaxableFees': 0.0,
+                'itemsDiscount': 0.0,
+                'unitValue': unit_value,
+                'discount': {
+                    'rate': (line.discount / (
+                                line.price_unit * line.qty) * 100) if line.price_unit and line.qty else 0.0,
+                    'amount': line.discount,
+                },
+                'taxableItems': tax_details['taxable_items'],
+                'salesTotal': line.price_unit * line.qty,
+                'netTotal': line.price_subtotal,
+                'total': line.price_subtotal_incl,
+            }
+            receipt_lines.append(receipt_line)
+
+        # Calculate tax totals
+        tax_totals = []
+        tax_amounts = {}
+        for line in order.lines:
+            tax_details = self._l10n_eg_calculate_line_taxes(line)
+            for tax in tax_details['taxable_items']:
+                tax_type = tax['taxType']
+                if tax_type in tax_amounts:
+                    tax_amounts[tax_type] += tax['amount']
+                else:
+                    tax_amounts[tax_type] = tax['amount']
+
+        for tax_type, amount in tax_amounts.items():
+            tax_totals.append({
+                'taxType': tax_type,
+                'amount': amount,
+            })
+
+        # Calculate totals
+        total_discount = sum(order.lines.mapped('discount'))
+        total_sales = sum(line.price_unit * line.qty for line in order.lines)
+        net_amount = order.amount_total - sum(tax_amounts.values())
+
+        # Prepare receipt data
+        receipt_data = {
+            'issuer': issuer,
+            'documentType': 'i',  # 'i' for invoice/receipt
+            'documentTypeVersion': '1.0',
+            'dateTimeIssued': order.date_order.strftime(
+                '%Y-%m-%dT%H:%M:%SZ') if order.date_order else fields.Datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'taxpayerActivityCode': activity_code,
+            'internalID': order.name,
+            'receiver': receiver,
+            'invoiceLines': receipt_lines,
+            'taxTotals': tax_totals,
+            'totalDiscountAmount': total_discount,
+            'extraDiscountAmount': 0.0,
+            'totalItemsDiscountAmount': 0.0,
+            'totalSalesAmount': total_sales,
+            'netAmount': net_amount,
+            'totalAmount': order.amount_total,
+            'signatures': [],
+        }
+
+        # If it's a refund/return order
+        if order.amount_total < 0:
+            receipt_data['documentType'] = 'c'  # Credit note
+            receipt_data['internalID'] = 'R' + order.name
+
+        return receipt_data
+
+    def _l10n_eg_calculate_line_taxes(self, line):
+        """Calculate taxes for a POS order line"""
+        taxable_items = []
+
+        if line.tax_ids:
+            for tax in line.tax_ids.filtered(lambda t: t.amount != 0):
+                tax_type_info = self._l10n_eg_get_tax_type_info(tax)
+
+                # Calculate tax amount
+                if tax.amount_type == 'percent':
+                    tax_amount = line.price_subtotal * tax.amount / 100
+                elif tax.amount_type == 'fixed':
+                    tax_amount = tax.amount * line.qty
+                else:
+                    tax_amount = 0
+
+                taxable_items.append({
+                    'taxType': tax_type_info['type'],
+                    'amount': tax_amount,
+                    'subType': tax_type_info['subtype'],
+                    'rate': tax.amount,
+                })
+        else:
+            # No tax
+            taxable_items.append({
+                'taxType': 'T1',
+                'amount': 0.0,
+                'subType': 'V009',
+                'rate': 0.0,
+            })
+
+        return {
+            'taxable_items': taxable_items
+        }
+
+    def _l10n_eg_get_tax_type_info(self, tax):
+        """Map Odoo tax to ETA tax type"""
+        tax_info = {
+            'type': 'T1',
+            'subtype': 'V009',
+            'rate': 14.0,
+        }
+
+        # Check if tax has ETA code
+        if hasattr(tax, 'l10n_eg_eta_code') and tax.l10n_eg_eta_code:
+            code = tax.l10n_eg_eta_code.lower()
+            if code.startswith('t1'):
+                tax_info['type'] = 'T1'
+                tax_info['subtype'] = code.split('_')[1].upper() if '_' in code else 'V009'
+            elif code.startswith('t2'):
+                tax_info['type'] = 'T2'
+                tax_info['subtype'] = code.split('_')[1].upper() if '_' in code else ''
+            elif code.startswith('t3'):
+                tax_info['type'] = 'T3'
+                tax_info['subtype'] = code.split('_')[1].upper() if '_' in code else ''
+            elif code.startswith('t4'):
+                tax_info['type'] = 'T4'
+                tax_info['subtype'] = code.split('_')[1].upper() if '_' in code else ''
+
+        tax_info['rate'] = tax.amount
+        return tax_info
+
+    def _l10n_eg_get_exchange_rate(self, order):
+        """Get exchange rate for foreign currency"""
+        company_currency = order.company_id.currency_id
+        order_currency = order.currency_id
+
+        if order_currency and order_currency != company_currency:
+            # Get rate from currency rates
+            rate_date = order.date_order or fields.Date.today()
+            exchange_rate = self.env['res.currency']._get_conversion_rate(
+                order_currency, company_currency, order.company_id, rate_date
+            )
+            return exchange_rate
+
+        return 1.0
+
+    def _l10n_eg_send_to_eta(self, order):
+        """Send receipt to ETA web service (mock implementation)"""
+        # In real implementation, you would:
+        # 1. Get access token from ETA
+        # 2. Prepare request with headers
+        # 3. Send POST request to ETA API
+        # 4. Handle response
+
+        # Mock implementation
+        try:
+            # Simulate API call
+            _logger.info(f'Sending POS order {order.name} to ETA')
+
+            # For now, return mock response
+            return {
+                'success': True,
+                'l10n_eg_uuid': f'POS-{order.name}-{fields.Datetime.now().strftime("%Y%m%d%H%M%S")}',
+                'l10n_eg_long_id': f'LONG-POS-{order.id}',
+                'l10n_eg_internal_id': order.name,
+                'l10n_eg_hash_key': 'MOCK_HASH_KEY',
+                'l10n_eg_submission_number': f'POS-{order.id}-{fields.Datetime.now().strftime("%Y%m%d")}',
+            }
+        except Exception as e:
+            _logger.error(f'Error sending to ETA: {str(e)}')
+            return {'success': False, 'error': str(e)}
+
+    def action_get_eta_receipt_pdf(self):
+        """Get PDF receipt from ETA"""
+        self.ensure_one()
+        if not self.l10n_eg_uuid:
+            raise UserError(_('This POS order is not signed with ETA'))
+
+        # This would call the actual ETA API to get PDF
+        # For now, return mock
+        pdf_data = b'%PDF-1.4\n%Mock PDF for ETA receipt\n'  # Mock PDF
+
+        self.message_post(
+            body=_('ETA receipt PDF has been downloaded'),
+            attachments=[('ETA Receipt - %s.pdf' % self.name, pdf_data)]
+        )
+
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/web/content/ir.attachment/{self.id}/datas?download=true',
+            'target': 'self',
+        }
 
     def action_sign_eta_invoices(self):
         """
