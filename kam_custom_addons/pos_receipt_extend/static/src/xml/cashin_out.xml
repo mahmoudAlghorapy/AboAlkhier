@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="pos_receipt_extend.Navbar"
+   t-inherit="point_of_sale.Navbar"
+   t-inherit-mode="extension"
+   owl="1">
+
+<xpath expr="//Dropdown//DropdownItem[2]" position="replace">
+
+         <DropdownItem t-if="this.pos.config.cash_control" onSelected="() => this.pos.cashMove()">
+                                    Cash In/Out
+                                </DropdownItem>
+    </xpath>
+</t>
+</templates>
