@@ -11,6 +11,7 @@ class AccountBankStatement(models.Model):
         comodel_name='account.journal',
         required=True,
         check_company=True,
+        compute=False
     )
 
     def action_open_statement(self):
