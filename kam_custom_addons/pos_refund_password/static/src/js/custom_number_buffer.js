@@ -47,36 +47,43 @@ patch(numberBufferService, {
         const originalHandleInput = buffer._handleInput.bind(buffer);
 
         buffer._handleInput = async function (key) {
-            const sensitiveKeys = ["Delete", "Backspace", "0", "-"];
-            const currentBuffer = this.get() || "";
-            const isFirstInput = currentBuffer === "";
+        const pos = this.component?.env?.services?.pos;
+        const currentScreen = pos?.router?.state?.current;
 
-            // Check if we need to ask for password
-            let needsPassword = false;
-
-            if (key === "Delete" || key === "Backspace") {
-                needsPassword = true;
-            } else if (key === "0" && (isFirstInput || currentBuffer === "-")) {
-                needsPassword = true;
-            } else if (key === "-") {
-                needsPassword = true;
+        // 🚫 BLOCK KEYS IN PAYMENT SCREEN
+        if (currentScreen === "PaymentScreen") {
+            const blockedKeys = ["Delete", "Backspace", "0", "-"];
+            if (blockedKeys.includes(key)) {
+                return; // DO NOTHING
             }
+        }
 
-            if (needsPassword) {
-                const allowed = await askPassword(this.component);
-                if (!allowed) {
-                    this.reset();
-                    return;
-                }
+        const currentBuffer = this.get() || "";
+        const isFirstInput = currentBuffer === "";
 
-                // After password validation, perform the action
-                await this._performSensitiveAction(key);
+        let needsPassword = false;
+
+        if (key === "Delete" || key === "Backspace") {
+            needsPassword = true;
+        } else if (key === "0" && (isFirstInput || currentBuffer === "-")) {
+            needsPassword = true;
+        } else if (key === "-") {
+            needsPassword = true;
+        }
+
+        if (needsPassword) {
+            const allowed = await askPassword(this.component);
+            if (!allowed) {
+                this.reset();
                 return;
             }
 
-            // For non-sensitive keys, proceed normally
-            return originalHandleInput(key);
-        };
+            await this._performSensitiveAction(key);
+            return;
+        }
+
+        return originalHandleInput(key);
+    };
 
         // Add method to handle sensitive actions
         buffer._performSensitiveAction = async function (key) {
