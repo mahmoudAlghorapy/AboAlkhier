@@ -51,12 +51,23 @@ patch(numberBufferService, {
         const currentScreen = pos?.router?.state?.current;
 
         // 🚫 BLOCK KEYS IN PAYMENT SCREEN
-        if (currentScreen === "PaymentScreen") {
-            const blockedKeys = ["Delete", "Backspace", "0", "-"];
-            if (blockedKeys.includes(key)) {
-                return; // DO NOTHING
+       if (currentScreen === "PaymentScreen") {
+            const input = this.get() || "";
+
+            const alwaysBlocked = ["Delete", "Backspace", "-"];
+
+            // always block these
+            if (alwaysBlocked.includes(key)) {
+                return;
+            }
+
+            // block leading zero only
+            if (key === "0" && input === "") {
+                return;
             }
         }
+
+
 
         const currentBuffer = this.get() || "";
         const isFirstInput = currentBuffer === "";
