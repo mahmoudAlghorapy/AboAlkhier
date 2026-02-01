@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <!-- POS Order Form View Extension -->
+        <record id="pos_order_view_form_ereceipt" model="ir.ui.view">
+            <field name="name">pos.order.form.ereceipt</field>
+            <field name="model">pos.order</field>
+            <field name="inherit_id" ref="point_of_sale.view_pos_pos_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='amount_total']" position="after">
+                    <field name="ereceipt_status"/>
+                </xpath>
+
+<!--                <xpath expr="//div[@class='oe_button_box']" position="inside">-->
+                <!--                    <button name="action_submit_ereceipt" type="object" string="Submit e-Receipt" class="oe_stat_button"-->
+                <!--                            icon="fa-file-text-o"-->
+                <!--                            attrs="{'invisible': [('ereceipt_status', '==', 'accepted')]}">-->
+                <!--                        <field name="ereceipt_status" widget="statinfo"/>-->
+                <!--                    </button>-->
+                <!--                </xpath>-->
+
+                <xpath expr="//page[@name='extra']" position="after">
+                    <page string="e-Receipts" name="ereceipts" invisible="not ereceipt_ids">
+                        <field name="ereceipt_ids" readonly="1">
+                            <list>
+                                <field name="uuid" readonly="1"/>
+                                <field name="state"/>
+                                <field name="request_date"/>
+                                <field name="receipt_number"/>
+                                <field name="error_message"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- POS Order Tree View Extension -->
+        <record id="pos_order_view_tree_ereceipt" model="ir.ui.view">
+            <field name="name">pos.order.tree.ereceipt</field>
+            <field name="model">pos.order</field>
+            <field name="inherit_id" ref="point_of_sale.view_pos_order_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='amount_total']" position="after">
+                    <field name="ereceipt_status"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="action_submit_ereceipt_server" model="ir.actions.server">
+            <field name="name">Send to ETA</field>
+            <field name="model_id" ref="point_of_sale.model_pos_order"/>
+            <field name="binding_model_id" ref="point_of_sale.model_pos_order"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+                if records:
+                    records.action_submit_ereceipt()
+            </field>
+        </record>
+    </data>
+</odoo>

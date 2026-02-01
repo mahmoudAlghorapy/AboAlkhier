@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_egypt_ereceipt_user,egypt.ereceipt.user,model_egypt_ereceipt,group_egypt_ereceipt_user,1,1,1,0
+access_egypt_ereceipt,access.egypt.ereceipt,model_egypt_ereceipt,base.group_user,1,1,1,0

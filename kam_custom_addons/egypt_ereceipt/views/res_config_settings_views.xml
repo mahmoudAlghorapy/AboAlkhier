@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="res_config_settings_view_form_company" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.inherit.egypt.ereceipt</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//app[@name='account']/block" position="after">
+                    <block title="ETA E-Receipt Settings"
+                           name="egyption_ereceipt"
+                           groups="account.group_account_manager"
+                           invisible="country_code != 'EG'">
+                        <group>
+                            <field name="egypt_ereceipt_enabled"/>
+                        </group>
+                    </block>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="res_config_settings_view_form_pos" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.egypt_ereceipt</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//block[@id='pos_accounting_section']" position="after">
+                    <block title="e-Receipt Settings" id="egypt_ereceipt_pos_settings"
+                           groups="account.group_account_manager"
+                           invisible="not egypt_ereceipt_enabled">
+                        <div class="o_setting_right_pane">
+                            <div class="o_row">
+                                <label for="pos_branch_code" string="Branch Code" class="col-lg-3 o_light_label"/>
+                                <div class="col-lg-3">
+                                    <field name="pos_branch_code" placeholder="Enter branch code"/>
+                                </div>
+                            </div>
+                            <div class="o_row mt16">
+                                <label for="pos_serial" string="POS Serial" class="col-lg-3 o_light_label"/>
+                                <div class="col-lg-3">
+                                    <field name="pos_serial" placeholder="Enter POS serial number"/>
+                                </div>
+                            </div>
+                            <div class="o_row mt16">
+                                <label for="pos_os_version" string="OS Version" class="col-lg-3 o_light_label"/>
+                                <div class="col-lg-3">
+                                    <field name="pos_os_version" placeholder="Enter operating system version"/>
+                                </div>
+                            </div>
+                            <div class="o_row mt16">
+                                <label for="pos_model_framework" string="Model/Framework"
+                                       class="col-lg-3 o_light_label"/>
+                                <div class="col-lg-3">
+                                    <field name="pos_model_framework" placeholder="Enter POS model/framework"/>
+                                </div>
+                            </div>
+                            <div class="o_row mt16">
+                                <label for="pre_shared_key" string="Security Key" class="col-lg-3 o_light_label"/>
+                                <div class="col-lg-3">
+                                    <field name="pre_shared_key" password="True"
+                                           placeholder="Enter pre-shared security key"/>
+                                </div>
+                            </div>
+                        </div>
+                    </block>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Security Groups -->
+        <record id="group_egypt_ereceipt_user" model="res.groups">
+            <field name="name">Egypt e-Receipt User</field>
+            <field name="comment">Access to Egypt e-Receipt module</field>
+        </record>
+    </data>
+    
+    <data noupdate="1">
+        <!-- Record rules for multi-company -->
+        <record id="egypt_ereceipt_company_rule" model="ir.rule">
+            <field name="name">Egypt e-Receipt: multi-company</field>
+            <field name="model_id" ref="model_egypt_ereceipt"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
+    </data>
+</odoo>
