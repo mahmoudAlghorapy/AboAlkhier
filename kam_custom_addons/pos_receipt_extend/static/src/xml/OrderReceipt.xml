@@ -19,12 +19,12 @@
         </span>
     </div>
 
-<!--                <div dir="rtl">-->
-<!--        الرقم الضريبي:-->
-<!--        <span dir="ltr">-->
-<!--            <t t-esc="env.services.pos.company.vat"/>-->
-<!--        </span>-->
-<!--    </div>-->
+                <!--                <div dir="rtl">-->
+                <!--        الرقم الضريبي:-->
+                <!--        <span dir="ltr">-->
+                <!--            <t t-esc="env.services.pos.company.vat"/>-->
+                <!--        </span>-->
+                <!--    </div>-->
 
                 <div>--------------------------</div>
 
@@ -39,7 +39,8 @@
             <!--            <div t-if="order?.getCashierName()" class="cashier">-->
             <!--                    <div> <t t-esc="order.getCashierName()"/>:تم بواسطة </div>-->
             <!--                </div>-->
-            <t t-if="this.env.services.pos.config.customer_details">
+            <t t-if="this.env.services.pos.config.customer_details and this.props.data">
+
                 <div t-if="this.env.services.pos.config.customer_name and this.props.data.customer_name"
                      style="font-weight:bold;">Customer Name:<t
                         t-esc="this.props.data.customer_name"/>
