@@ -13,8 +13,6 @@ patch(PosOrder.prototype, {
             result.headerData.customer_phone = this.partner_id.phone;
             result.headerData.customer_email = this.partner_id.email;
             result.headerData.customer_vat = this.partner_id.vat;
-           result.sale_notes = this.sale_notes || "";
-
         }
         return result;
     },
