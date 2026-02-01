@@ -209,10 +209,10 @@ class EgyptEReceipt(models.Model):
 
             data = {
                 'grant_type': 'client_credentials',
-                'client_id': company.l10n_eg_client_identifier,
-                'client_secret': company.l10n_eg_client_secret,
-                # 'client_id': order.config_id.pos_client_code,
-                # 'client_secret': order.config_id.pos_secret_code
+                # 'client_id': company.l10n_eg_client_identifier,
+                # 'client_secret': company.l10n_eg_client_secret,
+                'client_id': order.config_id.pos_client_code,
+                'client_secret': order.config_id.pos_secret_code
             }
 
             session = requests.session()

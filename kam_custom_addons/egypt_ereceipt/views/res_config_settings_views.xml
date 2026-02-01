@@ -29,7 +29,19 @@
                            groups="account.group_account_manager"
                            invisible="not egypt_ereceipt_enabled">
                         <div class="o_setting_right_pane">
-                            <div class="o_row">
+                             <div class="o_row">
+                                <label for="pos_client_code" string="Client Code" class="col-lg-3 o_light_label"/>
+                                <div class="col-lg-3">
+                                    <field name="pos_client_code" placeholder="Enter client code"/>
+                                </div>
+                            </div>
+                            <div class="o_row mt16">
+                                <label for="pos_secret_code" string="Secret Code" class="col-lg-3 o_light_label"/>
+                                <div class="col-lg-3">
+                                    <field name="pos_secret_code" placeholder="Enter secret code"/>
+                                </div>
+                            </div>
+                            <div class="o_row mt16">
                                 <label for="pos_branch_code" string="Branch Code" class="col-lg-3 o_light_label"/>
                                 <div class="col-lg-3">
                                     <field name="pos_branch_code" placeholder="Enter branch code"/>
