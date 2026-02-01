@@ -5,6 +5,13 @@ from odoo.exceptions import AccessError, ValidationError
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
+    customer_address = fields.Text(string="Customer Address", required=False, )
+
+    @api.depends('customer_address')
+    def _compute_pos_contact_address(self):
+        for partner in self:
+            partner.pos_contact_address = partner.customer_address
+
     @api.constrains('phone')
     def _check_mobile_length(self):
         for partner in self:

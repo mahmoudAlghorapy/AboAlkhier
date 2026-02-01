@@ -15,6 +15,7 @@
         'views/company_view.xml',
         'views/sale_order.xml',
         'views/pos_order.xml',
+        'views/res_partner_view.xml',
         'data/pos_transfer.xml',
     ],
     # 'assets':{
