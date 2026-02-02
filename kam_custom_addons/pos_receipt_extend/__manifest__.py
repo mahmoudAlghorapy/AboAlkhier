@@ -30,7 +30,7 @@
     'website': "https://www.cybrosys.com",
     'company': 'Cybrosys Techno Solutions',
     'maintainer': 'Cybrosys Techno Solutions',
-    'depends': ['point_of_sale', 'sale'],
+    'depends': ['point_of_sale', 'sale','abo_alkhier'],
     'data': [
         'views/res_config_settings_views.xml',
     ],
