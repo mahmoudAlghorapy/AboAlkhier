@@ -31,7 +31,7 @@
     'license': 'AGPL-3',
     'depends': ['pos_hr'],
     'data': [
-        # 'views/sbl_hr_employee_view.xml',
+        'views/sbl_hr_employee_view.xml',
         'views/res_user_view.xml',
     ],
     'assets': {
