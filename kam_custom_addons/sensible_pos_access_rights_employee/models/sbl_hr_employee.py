@@ -55,7 +55,7 @@ class HrEmployeeBase(models.Model):
     sbl_disable_pos_change_price = fields.Boolean(
         string='Disable POS Change Price',
         help='If checked, the Change Price functionality will be disabled for this employee in the POS interface.',
-        default=False,
+        default=True,
     )
 
     @api.model
