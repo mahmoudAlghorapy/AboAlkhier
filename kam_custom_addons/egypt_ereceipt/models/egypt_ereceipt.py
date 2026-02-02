@@ -275,7 +275,7 @@ class EgyptEReceipt(models.Model):
             total_sales += line_total
             total_discount += discount_amount
 
-            item_code = line.product_id.l10n_eg_eta_code or line.product_id.barcode
+            item_code = line.product_id.l10n_eg_eta_code or line.product_id.barcode or ''
             line_data = {
                 'internalCode': str(line.product_id.id),
                 'description': line.product_id.name,
