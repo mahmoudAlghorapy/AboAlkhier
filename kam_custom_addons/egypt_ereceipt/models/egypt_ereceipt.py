@@ -615,7 +615,7 @@ class EgyptEReceipt(models.Model):
         now = self.pos_order_id.date_order or fields.Datetime.now()
         year = now.strftime('%Y')
         month = now.strftime('%m')
-        branch_code = self.pos_config_id.pos_branch_code.zfill(2)
+        branch_code = str(self.pos_config_id.pos_branch_code or '0').zfill(2)
 
         # Filter existing records for same year, month, branch
         domain = [
