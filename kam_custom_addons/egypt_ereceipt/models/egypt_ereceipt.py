@@ -342,7 +342,7 @@ class EgyptEReceipt(models.Model):
                 "seller": {
                     "rin": company.vat,
                     "companyTradeName": company.name,
-                    "branchCode": self.pos_config_id.pos_branch_code,
+                    "branchCode":  self.pos_config_id.pos_branch_code or "0",
                     "branchAddress": {
                         "country": 'EG',
                         "governate": company.state_id.name if company.state_id else "",
@@ -615,7 +615,8 @@ class EgyptEReceipt(models.Model):
         now = self.pos_order_id.date_order or fields.Datetime.now()
         year = now.strftime('%Y')
         month = now.strftime('%m')
-        branch_code = self.pos_config_id.pos_branch_code.zfill(2)
+        branch_code = self.pos_config_id.pos_branch_code or "0"
+        branch_code = str(branch_code).zfill(2)
 
         # Filter existing records for same year, month, branch
         domain = [
