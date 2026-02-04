@@ -283,7 +283,7 @@ class EgyptEReceipt(models.Model):
                 'description': line.product_id.name,
                 'itemType': item_code.startswith('EG') and 'EGS' or 'GS1',  # Goods and Services
                 'itemCode': item_code,
-                'unitType': 'EA',  # Each
+                'unitType': line.product_id.product_uom_id.name,  # Each
                 'quantity': abs(line.qty),
                 "unitPrice": round(line.price_unit, 2),
                 "netSale": net,
