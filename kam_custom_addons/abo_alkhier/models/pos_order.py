@@ -18,6 +18,7 @@ ETA_TEST_RESPONSE = {
     'l10n_eg_submission_number': '12125523452353',
 }
 
+
 class PosOrder(models.Model):
     _inherit = "pos.order"
     sale_order_id = fields.Many2one(comodel_name="sale.order", string="", required=False)
@@ -263,7 +264,7 @@ class PosOrder(models.Model):
                 'unitValue': unit_value,
                 'discount': {
                     'rate': (line.discount / (
-                                line.price_unit * line.qty) * 100) if line.price_unit and line.qty else 0.0,
+                            line.price_unit * line.qty) * 100) if line.price_unit and line.qty else 0.0,
                     'amount': line.discount,
                 },
                 'taxableItems': tax_details['taxable_items'],
@@ -624,6 +625,32 @@ class PosOrder(models.Model):
 
         return sequence.next_by_id()
 
+    def _map_taxes_to_destination_company(self, source_taxes, dest_company):
+        """
+        Map taxes from source company to destination company
+        by name + amount + type
+        """
+        mapped_tax_ids = []
+
+        for tax in source_taxes:
+
+            dest_tax = self.env['account.tax'].sudo().search([
+                ('company_id', '=', dest_company.id),
+                ('amount', '=', tax.amount),
+                ('amount_type', '=', tax.amount_type),
+                ('type_tax_use', '=', tax.type_tax_use),
+            ], limit=1)
+
+            if dest_tax:
+                mapped_tax_ids.append(dest_tax.id)
+            else:
+                _logger.warning(
+                    "No matching tax found in destination company for tax '%s' (%.2f%%)",
+                    tax.name, tax.amount
+                )
+
+        return mapped_tax_ids
+
     def action_transfer_orders_to_destination(self):
         orders = (self or self.env['pos.order'].browse(
             self.env.context.get("active_ids", [])
@@ -774,6 +801,16 @@ class PosOrder(models.Model):
 
                 # Copy order lines
                 for line in order.lines:
+                    source_taxes = (
+                        line.tax_ids_after_fiscal_position
+                        if line.tax_ids_after_fiscal_position
+                        else line.tax_ids
+                    )
+
+                    mapped_taxes = self._map_taxes_to_destination_company(
+                        source_taxes,
+                        dest
+                    )
                     line_vals = {
                         'order_id': new_order.id,
                         'name': line.name,
@@ -787,9 +824,8 @@ class PosOrder(models.Model):
                         'margin_percent': getattr(line, 'margin_percent', 0.0),
                         'product_id': line.product_id.id,
                         'price_extra': line.price_extra,
-                        'tax_ids': [(6, 0, line.tax_ids.ids)],
-                        'tax_ids_after_fiscal_position': [(6, 0,
-                                                           line.tax_ids_after_fiscal_position.ids)] if line.tax_ids_after_fiscal_position else False,
+                        'tax_ids': [(6, 0, mapped_taxes)],
+                        'tax_ids_after_fiscal_position': [(6, 0, mapped_taxes)],
                         'pack_lot_ids': False,  # Don't copy lot/serial numbers
                         'note': line.note,
                         'customer_note': line.customer_note,
@@ -812,7 +848,22 @@ class PosOrder(models.Model):
                     #     line_vals['price_list_id'] = line.price_list_id.id
 
                     # Create the line
-                    self.env['pos.order.line'].with_company(dest.id).sudo().create(line_vals)
+                    new_line = self.env['pos.order.line'].with_company(dest.id).sudo().create(line_vals)
+                    # source_taxes = (
+                    #     line.tax_ids_after_fiscal_position
+                    #     if line.tax_ids_after_fiscal_position
+                    #     else line.tax_ids
+                    # )
+                    #
+                    # mapped_taxes = self._map_taxes_to_destination_company(
+                    #     line.tax_ids_after_fiscal_position or line.tax_ids,
+                    #     dest
+                    # )
+
+                    new_line.write({
+                        'tax_ids': [(6, 0, mapped_taxes)],
+                        'tax_ids_after_fiscal_position': [(6, 0, mapped_taxes)],
+                    })
 
                 # Copy payments
                 for payment in order.payment_ids:
@@ -821,7 +872,7 @@ class PosOrder(models.Model):
                         payment.payment_method_id,
                         dest_pos_config
                     )
-                    print('mapped_method',mapped_method)
+                    print('mapped_method', mapped_method)
 
                     if not mapped_method:
                         _logger.warning(
