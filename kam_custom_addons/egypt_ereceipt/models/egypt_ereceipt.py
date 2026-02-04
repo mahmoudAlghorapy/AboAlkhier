@@ -274,6 +274,8 @@ class EgyptEReceipt(models.Model):
 
             total_sales += line_total
             total_discount += discount_amount
+            base = round(abs(line.qty * line.price_unit), 5)
+            net = round(base - discount_amount, 5)
 
             item_code = line.product_id.l10n_eg_eta_code or line.product_id.barcode or ''
             line_data = {
@@ -284,9 +286,12 @@ class EgyptEReceipt(models.Model):
                 'unitType': 'EA',  # Each
                 'quantity': abs(line.qty),
                 "unitPrice": round(line.price_unit, 2),
-                "netSale": round(abs(line.price_subtotal), 2),
-                'totalSale': round(line_total, 2),
-                'total': round(abs(line.price_subtotal_incl), 2),
+                "netSale": net,
+                # "netSale": round(abs(line.price_subtotal), 2),
+                "total": net,
+                "totalSale": net,
+                # 'totalSale': round(line_total, 2),
+                # 'total': round(abs(line.price_subtotal_incl), 2),
                 "commercialDiscountData": [
                     {
                         "amount": 0,
@@ -322,6 +327,8 @@ class EgyptEReceipt(models.Model):
             partner_type = "F"
         else:
             partner_type = "P"
+        tax_totals = self._get_order_tax_totals(order)
+        tax_total_amount = sum(t["amount"] for t in tax_totals)
 
         # Main receipt structure
         receipt_data = {
@@ -372,8 +379,10 @@ class EgyptEReceipt(models.Model):
                 "extraReceiptDiscountData": [],
                 "netAmount": round(total_sales - total_discount, 5),
                 "feesAmount": 0,
-                "totalAmount": round(abs(order.amount_total), 5),
-                "taxTotals": self._get_order_tax_totals(order),
+                # "totalAmount": round(abs(order.amount_total), 5),
+                "totalAmount": round((total_sales - total_discount) + tax_total_amount, 5),
+                "taxTotals": tax_totals,
+                # "taxTotals": self._get_order_tax_totals(order),
                 "paymentMethod": payment_method,
                 "adjustment": 0
             }]
@@ -406,7 +415,7 @@ class EgyptEReceipt(models.Model):
                 taxType, subType = tax.l10n_eg_eta_code.split('_') if tax.l10n_eg_eta_code else ("T1", "V009")
                 tax_info = {
                     "taxType": taxType.upper(),  # VAT
-                    "amount": round((abs(line.price_subtotal) * tax.amount / 100), 5),
+                    "amount": round((abs(line.price_unit * line.qty) * tax.amount / 100), 5),
                     "subType": subType.upper(),  # Standard VAT rate
                     "rate": tax.amount
                 }
@@ -419,7 +428,7 @@ class EgyptEReceipt(models.Model):
         tax_totals_map = {}
 
         for line in order.lines:
-            line_base = abs(line.price_subtotal)
+            line_base = abs(line.price_unit * line.qty)
 
             for tax in line.tax_ids_after_fiscal_position:
                 if tax.amount > 0:
