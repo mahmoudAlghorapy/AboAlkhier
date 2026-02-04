@@ -133,8 +133,8 @@
     <!--    </xpath>-->
 
     <!-- ========== PAYMENTS ========== -->
-    <xpath expr="//div[hasclass('d-flex pt-3')]" position="replace">
-    </xpath>
+<!--    <xpath expr="//div[hasclass('d-flex pt-3')]" position="replace">-->
+<!--    </xpath>-->
     <xpath expr="//div[hasclass('text-break text-end')]" position="replace">
         <div dir="rtl" class="text-center pt-3">
             <t t-if="order.sale_notes">
