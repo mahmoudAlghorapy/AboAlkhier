@@ -1,26 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <data>
-        <record id="action_sign_pos_orders_eta" model="ir.actions.server">
-            <field name="name">Sign ETA Invoices</field>
-            <field name="state">code</field>
-            <field name="model_id" ref="point_of_sale.model_pos_order"/>
-            <field name="binding_model_id" ref="point_of_sale.model_pos_order"/>
-            <field name="code">
-                action = records.action_sign_eta_invoices()
-            </field>
-        </record>
-<!--         <record id="action_sign_pos_orders" model="ir.actions.server">-->
-<!--            <field name="name">Sign POS Orders with ETA</field>-->
-<!--            <field name="type">ir.actions.server</field>-->
-<!--            <field name="model_id" ref="point_of_sale.model_pos_order"/>-->
-<!--            <field name="binding_model_id" ref="point_of_sale.model_pos_order"/>-->
-<!--            <field name="binding_view_types">list,form</field>-->
-<!--            <field name="state">code</field>-->
-<!--            <field name="code">-->
-<!--                action = records.action_post_sign_pos_orders()-->
-<!--            </field>-->
-<!--        </record>-->
         <record id="seq_pos_order_manual" model="ir.sequence">
             <field name="name">POS Order Manual</field>
             <field name="code">pos.order.manual</field>
