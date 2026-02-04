@@ -265,54 +265,51 @@ class EgyptEReceipt(models.Model):
 
         total_sales = 0
         total_discount = 0
+        total_net = 0
 
         receipt_lines = []
         for line in order.lines:
-            discount_rate = line.discount or 0
-            line_total = abs(line.qty) * line.price_unit
-            discount_amount = line_total * discount_rate / 100.0
+            qty = abs(line.qty)
+            unit_price = abs(line.price_subtotal / qty) if qty else 0
+            discount_rate = line.discount or 0.0
 
-            total_sales += line_total
-            total_discount += discount_amount
+            total_sale = round(qty * unit_price, 5)  # after discount, tax excluded
+            total = abs(line.price_subtotal_incl)  # after discount, tax included
+            net_sale = total_sale  # because commercial discount = 0
+
+            tax_amount = total - total_sale  # VAT amount
+
+            total_sales += total_sale
+            total_net += net_sale
 
             item_code = line.product_id.l10n_eg_eta_code or line.product_id.barcode or ''
+
             line_data = {
-                'internalCode': str(line.product_id.id),
-                'description': line.product_id.name,
-                'itemType': item_code.startswith('EG') and 'EGS' or 'GS1',  # Goods and Services
-                'itemCode': item_code,
-                'unitType': 'EA',  # Each
-                'quantity': abs(line.qty),
-                "unitPrice": round(line.price_unit, 2),
-                "netSale": round(abs(line.price_subtotal), 2),
-                'totalSale': round(line_total, 2),
-                'total': round(abs(line.price_subtotal_incl), 2),
+                "internalCode": str(line.product_id.id),
+                "description": line.product_id.name,
+                "itemType": item_code.startswith("EG") and "EGS" or "GS1",
+                "itemCode": item_code,
+                "unitType": "EA",
+                "quantity": qty,
+                "unitPrice": round(unit_price, 5),
+
+                "totalSale": round(total_sale, 5),
+                "netSale": round(net_sale, 5),
+                "total": round(total, 5),
+
                 "commercialDiscountData": [
-                    {
-                        "amount": 0,
-                        "description": "CDESC",
-                        "rate": 0
-                    }
+                    {"amount": 0, "description": "CDESC", "rate": 0}
                 ],
                 "itemDiscountData": [
-                    {
-                        "amount": round(discount_amount, 2),
-                        "description": f"Item Discount ({discount_rate}%)" if discount_rate else "IDESC",
-                        "rate": round(discount_rate, 2)
-                    }
+                    {"amount": 0, "description": "IDESC", "rate": 0}
                 ],
-                "additionalCommercialDiscount": {
-                    "amount": 0,
-                    "description": "ADESC",
-                    "rate": 0
-                },
-                "additionalItemDiscount": {
-                    "amount": 0,
-                    "description": "AIDESC",
-                    "rate": 0
-                },
-                'valueDifference': 0,
-                'taxableItems': self._get_tax_data(line)
+
+                "additionalCommercialDiscount": {"amount": 0, "description": "ADESC", "rate": 0},
+                "additionalItemDiscount": {"amount": 0, "description": "AIDESC", "rate": 0},
+
+                "valueDifference": 0,
+
+                "taxableItems": self._get_tax_data(line)  # ✅ important
             }
             receipt_lines.append(line_data)
 
@@ -370,7 +367,7 @@ class EgyptEReceipt(models.Model):
                 "totalCommercialDiscount": 0,
                 "totalItemsDiscount": round(total_discount, 5),
                 "extraReceiptDiscountData": [],
-                "netAmount": round(total_sales - total_discount, 5),
+                "netAmount": round(total_net, 5),
                 "feesAmount": 0,
                 "totalAmount": round(abs(order.amount_total), 5),
                 "taxTotals": self._get_order_tax_totals(order),
@@ -431,7 +428,7 @@ class EgyptEReceipt(models.Model):
 
                     # Group only by tax_type, not by rate or sub_type
                     key = tax_type  # Changed from (tax_type, rate, sub_type)
-                    tax_amount = line_base * rate / 100
+                    tax_amount = round((abs(line.price_subtotal) * rate / 100), 5)
 
                     if key not in tax_totals_map:
                         tax_totals_map[key] = 0
