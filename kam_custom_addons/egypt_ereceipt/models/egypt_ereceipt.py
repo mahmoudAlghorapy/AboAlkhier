@@ -325,7 +325,7 @@ class EgyptEReceipt(models.Model):
             "receipts": [{
                 "header": {
                     "dateTimeIssued": order.date_order.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    "receiptNumber": self._get_receipt_number(),
+                    "receiptNumber": self.pos_order_id.name,
                     "uuid": '',  # Will be set later
                     "previousUUID": self.previous_uuid or '',
                     "currency": order.currency_id.name or 'EGP',
