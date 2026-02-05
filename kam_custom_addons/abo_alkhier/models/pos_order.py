@@ -29,6 +29,7 @@ class PosOrder(models.Model):
         index=True,
     )
     sale_notes = fields.Text("Sale Notes")
+
     def _get_destination_or_raise(self, order):
         if not order.company_id:
             raise UserError(_("Order %s has no company set.") % (order.name or order.id))
@@ -195,6 +196,19 @@ class PosOrder(models.Model):
         orders = (self or self.env['pos.order'].browse(
             self.env.context.get("active_ids", [])
         )).filtered(lambda o: not o.is_transferred)
+        for order in orders:
+            for line in order.lines:
+                taxes = line.tax_ids_after_fiscal_position or line.tax_ids
+                tax_rate = sum(t.amount for t in taxes) / 100.0
+
+                subtotal_incl = line.qty * line.price_unit
+                subtotal = subtotal_incl / (1 + tax_rate) if tax_rate else subtotal_incl
+
+                line.write({
+                    'price_subtotal': subtotal,
+                    'price_subtotal_incl': subtotal_incl,
+                })
+
         if not orders:
             return {
                 "type": "ir.actions.client",
@@ -351,14 +365,23 @@ class PosOrder(models.Model):
                         source_taxes,
                         dest
                     )
+                    tax_rate = 0.0
+                    if mapped_taxes:
+                        taxes = self.env['account.tax'].sudo().browse(mapped_taxes)
+                        tax_rate = sum(t.amount for t in taxes) / 100.0
+
+                    subtotal = (line.qty * line.price_unit) / (1 + tax_rate) if tax_rate else (
+                                line.qty * line.price_unit)
+                    subtotal_incl = line.qty * line.price_unit
+
                     line_vals = {
                         'order_id': new_order.id,
                         'name': line.name,
                         'full_product_name': line.full_product_name,
                         'qty': line.qty,
                         'price_unit': line.price_unit,
-                        'price_subtotal': line.price_subtotal,
-                        'price_subtotal_incl': line.price_subtotal_incl,
+                        'price_subtotal': subtotal,
+                        'price_subtotal_incl': subtotal_incl,
                         'discount': line.discount,
                         'margin': getattr(line, 'margin', 0.0),
                         'margin_percent': getattr(line, 'margin_percent', 0.0),
