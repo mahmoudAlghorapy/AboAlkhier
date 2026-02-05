@@ -7,6 +7,10 @@
         <field name="inherit_id" ref="point_of_sale.view_pos_order_tree"/>
         <field name="arch" type="xml">
 
+            <xpath expr="//field[@name='employee_id']" position="after">
+                    <field name="amount_tax" optional="show"/>
+
+            </xpath>
             <xpath expr="//field[@name='state']" position="after">
                 <field name="is_transferred"/>
                 <!-- Add your fields or attributes here -->
