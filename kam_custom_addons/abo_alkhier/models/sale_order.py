@@ -35,6 +35,7 @@ class SaleOrder(models.Model):
         compute_sudo=True
     )
 
+
     @api.depends('pos_order_ids')
     def _compute_pos_order_count(self):
         for order in self:
@@ -152,7 +153,7 @@ class SaleOrder(models.Model):
             'partner_id': sale_order.partner_id.id,
             'date_order': fields.Datetime.now(),
             'company_id': pos_session.company_id.id,
-            'sale_order_id': sale_order.id,  # رابط مع أمر البيع الأصلي
+            # 'sale_order_id': sale_order.id,  # رابط مع أمر البيع الأصلي
             'user_id': self.env.user.id,
             'amount_tax': sale_order.amount_tax,
             'amount_total': sale_order.amount_total,
@@ -207,7 +208,7 @@ class SaleOrder(models.Model):
             'tax_ids': [(6, 0, taxes.ids)] if taxes else False,
             'name': sale_line.name,
             'full_product_name': sale_line.name,
-            'sale_order_line_id': sale_line.id,  # رابط مع خط البيع الأصلي
+            # 'sale_order_line_id': sale_line.id,  # رابط مع خط البيع الأصلي
         }
 
         # إنشاء خط المنتج مع السياق الصحيح للشركة
