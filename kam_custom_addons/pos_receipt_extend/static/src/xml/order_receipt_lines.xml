@@ -45,9 +45,10 @@
                 <span>
             <t t-esc="line.product_id.name"/>
         </span>
+                <br/>
 
                 <span style="font-size:12px; color:#666; margin-right:6px;">
-            / <t t-esc="line.product_id.uom_id.name"/>
+             <t t-esc="line.product_id.uom_id.name"/>
         </span>
 
                 <!-- UNIT PRICE -->
@@ -133,8 +134,8 @@
     <!--    </xpath>-->
 
     <!-- ========== PAYMENTS ========== -->
-<!--    <xpath expr="//div[hasclass('d-flex pt-3')]" position="replace">-->
-<!--    </xpath>-->
+    <!--    <xpath expr="//div[hasclass('d-flex pt-3')]" position="replace">-->
+    <!--    </xpath>-->
     <xpath expr="//div[hasclass('text-break text-end')]" position="replace">
         <div dir="rtl" class="text-center pt-3">
             <t t-if="order.sale_notes">
