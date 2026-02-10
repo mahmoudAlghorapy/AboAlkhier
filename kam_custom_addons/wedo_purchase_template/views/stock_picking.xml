@@ -13,6 +13,8 @@
                 <attribute name="readonly">parent.qty_confirmed</attribute>
             </xpath>
 
+            <xpath expr="//button[@name='action_assign']" position="replace">
+            </xpath>
             <xpath expr="//button[@name='do_print_picking']" position="after">
 
                 <button name="force_set_quantity"
