@@ -1,11 +1,13 @@
 from odoo import models, fields, api, _
 import logging
+from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
 
 class StockMove(models.Model):
     _inherit = 'stock.move'
+    qty_confirmed = fields.Boolean(string="Quantity Confirmed", default=False)
 
     def _trace_through_chain(self, start_name, visited=None, depth=0):
         """Recursively trace through the entire order chain, ignoring access rights"""
@@ -119,6 +121,11 @@ class StockMove(models.Model):
 
     def write(self, vals):
         """Override write to sync quantities across all related moves with sudo"""
+        if not self.env.context.get('skip_qty_confirmed_check'):
+            if any(k in vals for k in ['quantity', 'product_uom_qty']):
+                for move in self.sudo():
+                    if move.qty_confirmed or (move.picking_id and move.picking_id.qty_confirmed):
+                        raise UserError(_("Quantity is confirmed and cannot be changed."))
         if self.env.context.get('skip_all_sync'):
             return super().write(vals)
 
@@ -152,7 +159,17 @@ class StockPicking(models.Model):
                                      compute="compute_sub_vendor_id")
     ref_po_template_id = fields.Many2one('purchase.order.template', string='Ref Purchase template',
                                          compute="compute_sub_vendor_id")
+    qty_confirmed = fields.Boolean(string="Quantity Confirmed", default=False)
 
+    def action_confirm_quantity(self):
+        for picking in self.sudo():
+            related_pickings = picking._get_all_related_pickings()
+            all_pickings = picking | related_pickings
+
+            all_pickings.sudo().write({'qty_confirmed': True})
+
+            # lock moves too
+            all_pickings.mapped('move_ids').sudo().write({'qty_confirmed': True})
 
     def force_set_quantity(self):
 
@@ -404,6 +421,15 @@ class StockPicking(models.Model):
 
         return created_moves
 
+    def write(self, vals):
+        if not self.env.context.get('skip_qty_confirmed_check'):
+            if 'move_ids' in vals or 'move_line_ids' in vals:
+                for picking in self:
+                    if picking.qty_confirmed:
+                        raise UserError(_("This picking quantity is confirmed and cannot be modified."))
+
+        return super().write(vals)
+
     def button_validate(self):
         if self.env.context.get('skip_intercompany_sync'):
             return super().button_validate()
@@ -430,7 +456,8 @@ class StockPicking(models.Model):
                     qty = move.quantity
 
                     # 🔑 Force product_uom_qty to match synced quantity
-                    move.sudo().write({'product_uom_qty': qty})
+                    move.sudo().with_context(skip_qty_confirmed_check=True).write({'product_uom_qty': qty})
+
 
 
                 # Now validate safely
