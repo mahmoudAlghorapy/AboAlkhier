@@ -16,6 +16,8 @@ class StockMoveLine(models.Model):
 class StockMove(models.Model):
     _inherit = 'stock.move'
     qty_confirmed = fields.Boolean(string="Quantity Confirmed", default=False)
+    quantity = fields.Float(
+        'Quantity', compute='_compute_quantity', digits='Product Unit', inverse=False, store=True)
 
     def _action_assign(self, force_qty=False):
         for move in self:
