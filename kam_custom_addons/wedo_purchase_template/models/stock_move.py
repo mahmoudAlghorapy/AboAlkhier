@@ -17,6 +17,12 @@ class StockMove(models.Model):
     _inherit = 'stock.move'
     qty_confirmed = fields.Boolean(string="Quantity Confirmed", default=False)
 
+    def _action_assign(self, force_qty=False):
+        for move in self:
+            if move.qty_confirmed or (move.picking_id and move.picking_id.qty_confirmed):
+                return True
+        return super()._action_assign(force_qty=force_qty)
+
     def _trace_through_chain(self, start_name, visited=None, depth=0):
         """Recursively trace through the entire order chain, ignoring access rights"""
         if visited is None:
@@ -444,11 +450,6 @@ class StockPicking(models.Model):
                 return True
         return super().action_assign()
 
-    def _action_assign(self, force_qty=False):
-        for move in self:
-            if move.qty_confirmed or (move.picking_id and move.picking_id.qty_confirmed):
-                return True
-        return super()._action_assign(force_qty=force_qty)
 
     def button_validate(self):
         if self.env.context.get('skip_intercompany_sync'):
