@@ -3,7 +3,15 @@ import logging
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
+class StockMoveLine(models.Model):
+    _inherit = 'stock.move.line'
 
+    def write(self, vals):
+        if any(k in vals for k in ['quantity', 'product_uom_qty']):
+            for line in self:
+                if line.move_id.qty_confirmed or line.picking_id.qty_confirmed:
+                    raise UserError(_("Quantity confirmed: you cannot change done quantity."))
+        return super().write(vals)
 
 class StockMove(models.Model):
     _inherit = 'stock.move'
@@ -429,6 +437,18 @@ class StockPicking(models.Model):
                         raise UserError(_("This picking quantity is confirmed and cannot be modified."))
 
         return super().write(vals)
+
+    def action_assign(self):
+        for move in self:
+            if move.qty_confirmed or (move.picking_id and move.picking_id.qty_confirmed):
+                return True
+        return super().action_assign()
+
+    def _action_assign(self, force_qty=False):
+        for move in self:
+            if move.qty_confirmed or (move.picking_id and move.picking_id.qty_confirmed):
+                return True
+        return super()._action_assign(force_qty=force_qty)
 
     def button_validate(self):
         if self.env.context.get('skip_intercompany_sync'):
