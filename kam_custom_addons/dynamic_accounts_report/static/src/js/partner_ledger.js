@@ -396,7 +396,7 @@ class PartnerLedger extends Component {
                         const line = entry[0];
                         const debit = parseFloat(line.debit) || 0;
                         const credit = parseFloat(line.credit) || 0;
-                        runningBalance = debit - credit;
+                        runningBalance = runningBalance + debit - credit;
 
                         line.balance = runningBalance;
                         line.debit_display = this.formatNumberWithSeparators(debit);

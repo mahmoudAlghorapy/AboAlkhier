@@ -247,7 +247,17 @@
                                                        t-esc="valuelist[0]['amount_currency']"/>
                                                 </span>
                                             </th>
-                                            <th style="width:10%"/>
+                                            <th style="width:10%">
+                                                <span>
+                                                    <t t-if="valuelist[0].get('balance_display')">
+                                                        <t t-esc="valuelist[0]['balance_display']"/>
+                                                    </t>
+                                                    <t t-elif="valuelist[0].get('balance')">
+                                                        <t t-esc="valuelist[0]['balance']"/>
+                                                    </t>
+                                                    <t t-else="">0.00</t>
+                                                </span>
+                                            </th>
                                         </tr>
                                     </t>
                                 </tbody>
@@ -270,7 +280,7 @@
                                 <th style="width:10%">
                                     <t t-out="grand_total['currency']"/>
                                     <t t-if="grand_total['total_debit'] and grand_total['total_credit']">
-                                    <t t-out="grand_total['total_debit'] - grand_total['total_credit']"/>
+                                        <t t-out="grand_total['total_debit'] - grand_total['total_credit']"/>
                                     </t>
                                 </th>
                             </tr>

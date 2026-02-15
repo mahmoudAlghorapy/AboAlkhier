@@ -202,7 +202,7 @@ class AccountPartnerLedger(models.TransientModel):
                             account_type_domain),
                          ('parent_state', 'in', option_domain)]).filtered(
                         lambda x: x.date.month == fields.Date.today().month - 1)
-                    date_start = fields.Date.today().replace(day=1,month=fields.Date.today().month - 1)
+                    date_start = fields.Date.today().replace(day=1, month=fields.Date.today().month - 1)
                     balance_move_line_ids = self.env[
                         'account.move.line'].search(
                         [('partner_id', '=', partners), (
@@ -217,7 +217,7 @@ class AccountPartnerLedger(models.TransientModel):
                             account_type_domain),
                          ('parent_state', 'in', option_domain)]).filtered(
                         lambda x: x.date.year == fields.Date.today().year - 1)
-                    date_start = fields.Date.today().replace(day=1,month=1,)
+                    date_start = fields.Date.today().replace(day=1, month=1, )
                     balance_move_line_ids = self.env[
                         'account.move.line'].search(
                         [('partner_id', '=', partners), (
@@ -290,7 +290,7 @@ class AccountPartnerLedger(models.TransientModel):
                     fiscal_year = self.env['res.company'].search([]).mapped(
                         'account_opening_date')[0].strftime('%Y-%m-%d')
                     date_start = datetime.strptime(fiscal_year,
-                                                          '%Y-%m-%d').date()
+                                                   '%Y-%m-%d').date()
                     balance_move_line_ids = self.env[
                         'account.move.line'].search(
                         [('partner_id', '=', partners), (
@@ -470,8 +470,12 @@ class AccountPartnerLedger(models.TransientModel):
                     sheet.merge_range(row, col + 11, row, col + 12, format_number(initial_balance), txt_name)
 
                 # Process move lines for the partner
+                running_balance = initial_balance or 0
                 for rec in data['data'][partner]:
                     row += 1
+                    debit = rec[0].get('debit', 0) or 0
+                    credit = rec[0].get('credit', 0) or 0
+                    running_balance = running_balance + debit - credit
                     sheet.write(row, col, rec[0]['date'], txt_name)
                     sheet.write(row, col + 1, rec[0]['jrnl'], txt_name)
                     sheet.write(row, col + 2, rec[0]['code'], txt_name)
@@ -479,7 +483,7 @@ class AccountPartnerLedger(models.TransientModel):
                     sheet.merge_range(row, col + 5, row, col + 6, rec[0]['date_maturity'] or '', txt_name)
                     sheet.merge_range(row, col + 7, row, col + 8, format_number(rec[0]['debit']), txt_name)
                     sheet.merge_range(row, col + 9, row, col + 10, format_number(rec[0]['credit']), txt_name)
-                    sheet.merge_range(row, col + 11, row, col + 12, ' ', txt_name)
+                    sheet.merge_range(row, col + 11, row, col + 12, format_number(running_balance), txt_name)
 
             # Grand totals
             row += 1
